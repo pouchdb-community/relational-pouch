@@ -314,5 +314,82 @@ function tests(dbName, dbType) {
         res.pokemon.should.have.length(1);
       });
     });
+
+    it('should find a single thing', function () {
+
+      db.initRelational([
+        {
+          singular: 'post',
+          plural: 'posts'
+        },
+        {
+          singular: 'pokemon',
+          plural: 'pokemon'
+        }
+      ]);
+
+      return db.rel.save('post', {text: 'hey', id: 1}).then(function () {
+        return db.rel.save('post', {text: 'you', id: 2});
+      }).then(function () {
+        return db.rel.save('pokemon', {name: 'bulbasaur', id: 1});
+      }).then(function () {
+        return db.rel.find('post', 1);
+      }).then(function (res) {
+        delete res.posts[0].rev;
+        res.should.deep.equal({posts: [{
+          text: 'hey',
+          id: 1
+        }]});
+        return db.rel.find('pokemon', 1);
+      }).then(function (res) {
+        delete res.pokemon[0].rev;
+        res.should.deep.equal({pokemon: [{
+          name: 'bulbasaur',
+          id: 1
+        }]});
+      });
+    });
+
+    it('should find multiple things', function () {
+
+      db.initRelational([
+        {
+          singular: 'post',
+          plural: 'posts'
+        },
+        {
+          singular: 'pokemon',
+          plural: 'pokemon'
+        }
+      ]);
+
+      return db.rel.save('post', {text: 'hey', id: 1}).then(function () {
+        return db.rel.save('post', {text: 'you', id: 2});
+      }).then(function () {
+        return db.rel.save('pokemon', {name: 'bulbasaur', id: 1});
+      }).then(function () {
+        return db.rel.find('post', [1, 2]);
+      }).then(function (res) {
+        delete res.posts[0].rev;
+        delete res.posts[1].rev;
+        res.should.deep.equal({posts: [
+          {
+            text: 'hey',
+            id: 1
+          },
+          {
+            text: 'you',
+            id: 2
+          }
+        ]});
+        return db.rel.find('pokemon', [1]);
+      }).then(function (res) {
+        delete res.pokemon[0].rev;
+        res.should.deep.equal({pokemon: [{
+          name: 'bulbasaur',
+          id: 1
+        }]});
+      });
+    });
   });
 }
