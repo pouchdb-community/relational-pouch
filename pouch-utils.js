@@ -81,3 +81,4 @@ exports.toPromise = function (func) {
 
 exports.inherits = require('inherits');
 exports.Promise = Promise;
+exports.extend = require('pouchdb-extend');

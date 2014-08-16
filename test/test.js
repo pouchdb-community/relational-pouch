@@ -6,8 +6,8 @@ var Pouch = require('pouchdb');
 //
 // your plugin goes here
 //
-var helloPlugin = require('../');
-Pouch.plugin(helloPlugin);
+var plugin = require('../lib');
+Pouch.plugin(plugin);
 
 var chai = require('chai');
 chai.use(require("chai-as-promised"));
@@ -15,7 +15,7 @@ chai.use(require("chai-as-promised"));
 //
 // more variables you might want
 //
-chai.should(); // var should = chai.should();
+var should = chai.should(); // var should = chai.should();
 require('bluebird'); // var Promise = require('bluebird');
 
 var dbs;
@@ -42,10 +42,109 @@ function tests(dbName, dbType) {
   afterEach(function () {
     return Pouch.destroy(dbName);
   });
-  describe(dbType + ': hello test suite', function () {
-    it('should say hello', function () {
-      return db.sayHello().then(function (response) {
-        response.should.equal('hello');
+
+  describe(dbType + ': basic tests', function () {
+
+    it('should barf on bad types', function () {
+      db.initRelational([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      return db.rel.save('unknown', {}).then(function (res) {
+        should.not.exist(res);
+      }).catch(function (err) {
+        should.exist(err);
+      });
+    });
+
+    it('should store blog posts', function () {
+
+      db.initRelational([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var title = 'Rails is Omakase';
+      var text = 'There are a lot of ala carte blah blah blah';
+
+      return db.rel.save('post', {
+        title: title,
+        text: text
+      }).then(function (res) {
+        should.exist(res);
+        res.posts.should.have.length(1);
+        res.posts[0].id.should.be.a('string');
+        res.posts[0].rev.should.be.a('string');
+        var id = res.posts[0].id;
+        var rev = res.posts[0].rev;
+        res.posts[0].should.deep.equal({
+          id: id,
+          rev: rev,
+          title: title,
+          text: text
+        });
+      });
+    });
+    it('should store blog posts with an id', function () {
+
+      db.initRelational([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var title = 'Rails is Omakase';
+      var text = 'There are a lot of ala carte blah blah blah';
+      var id = 'foobarbaz';
+
+      return db.rel.save('post', {
+        title: title,
+        text: text,
+        id: id
+      }).then(function (res) {
+        should.exist(res);
+        res.posts.should.have.length(1);
+        res.posts[0].id.should.be.a('string');
+        res.posts[0].rev.should.be.a('string');
+        var id = res.posts[0].id;
+        var rev = res.posts[0].rev;
+        res.posts[0].should.deep.equal({
+          id: id,
+          rev: rev,
+          title: title,
+          text: text
+        });
+      });
+    });
+
+    it('should store blog posts with an int id', function () {
+
+      db.initRelational([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var title = 'Rails is Omakase';
+      var text = 'There are a lot of ala carte blah blah blah';
+      var id = 1;
+
+      return db.rel.save('post', {
+        title: title,
+        text: text,
+        id: id
+      }).then(function (res) {
+        should.exist(res);
+        res.posts.should.have.length(1);
+        res.posts[0].id.should.be.a('number');
+        res.posts[0].rev.should.be.a('string');
+        var id = res.posts[0].id;
+        var rev = res.posts[0].rev;
+        res.posts[0].should.deep.equal({
+          id: id,
+          rev: rev,
+          title: title,
+          text: text
+        });
       });
     });
   });
