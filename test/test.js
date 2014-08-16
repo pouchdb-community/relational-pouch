@@ -288,6 +288,25 @@ function tests(dbName, dbType) {
       });
     });
 
+    it('should find stuff that doesnt exist', function () {
+
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      return db.rel.find('post', 'foo').then(function (res) {
+        res.should.deep.equal({
+          posts: []
+        });
+        return db.rel.find('post', ['foo']);
+      }).then(function (res) {
+        res.should.deep.equal({
+          posts: []
+        });
+      });
+    });
+
     it('should separate independent types', function () {
 
       db.setSchema([
