@@ -178,5 +178,61 @@ function tests(dbName, dbType) {
         }]);
       });
     });
+
+    it('should find blog posts', function () {
+
+      db.initRelational([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+
+      return db.rel.save('post', {
+        title: 'Rails is Omakase',
+        text: 'There are a lot of ala carte blah blah blah',
+        id: 1
+      }).then(function () {
+        return db.rel.save('post', {
+          title: 'Rails is Unagi',
+          text: 'Declicious unagi',
+          id: 2
+        });
+      }).then(function () {
+        return db.rel.find('post');
+      }).then(function (res) {
+        res.posts.forEach(function (post) {
+          post.rev.should.be.a('string');
+          delete post.rev;
+        });
+        res.should.deep.equal({
+          posts: [
+            {
+              title: 'Rails is Omakase',
+              text: 'There are a lot of ala carte blah blah blah',
+              id: 1
+            },
+            {
+              title: 'Rails is Unagi',
+              text: 'Declicious unagi',
+              id: 2
+            }
+          ]
+        });
+      });
+    });
+
+    it('should find empty blog posts', function () {
+
+      db.initRelational([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      return db.rel.find('post').then(function (res) {
+        res.should.deep.equal({
+          posts: []
+        });
+      });
+    });
   });
 }
