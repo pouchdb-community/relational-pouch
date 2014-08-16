@@ -287,5 +287,32 @@ function tests(dbName, dbType) {
         });
       });
     });
+
+    it('should separate independent types', function () {
+
+      db.initRelational([
+        {
+          singular: 'post',
+          plural: 'posts'
+        },
+        {
+          singular: 'pokemon',
+          plural: 'pokemon'
+        }
+      ]);
+
+      return db.rel.save('post', {text: 'hey'}).then(function () {
+        return db.rel.save('post', {text: 'you'});
+      }).then(function () {
+        return db.rel.save('pokemon', {name: 'bulbasaur'});
+      }).then(function () {
+        return db.rel.find('post');
+      }).then(function (res) {
+        res.posts.should.have.length(2);
+        return db.rel.find('pokemon');
+      }).then(function (res) {
+        res.pokemon.should.have.length(1);
+      });
+    });
   });
 }
