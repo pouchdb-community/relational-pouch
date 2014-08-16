@@ -147,5 +147,36 @@ function tests(dbName, dbType) {
         });
       });
     });
+
+    it('should update blog posts', function () {
+
+      db.initRelational([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var title = 'Rails is Omakase';
+      var text = 'There are a lot of ala carte blah blah blah';
+      var id = 1;
+
+      return db.rel.save('post', {
+        title: title,
+        text: text,
+        id: id
+      }).then(function (res) {
+        should.exist(res);
+        var post = res.posts[0];
+        post.title = 'Rails is Unagi';
+        return db.rel.save('post', post);
+      }).then(function (res) {
+        var rev = res.posts[0].rev;
+        res.posts.should.deep.equal([{
+          id: id,
+          rev: rev,
+          title: 'Rails is Unagi',
+          text: text
+        }]);
+      });
+    });
   });
 }
