@@ -1,43 +1,225 @@
-PouchDB Plugin Seed
+Relational Pouch
 =====
 
 [![Build Status](https://travis-ci.org/pouchdb/plugin-seed.svg)](https://travis-ci.org/pouchdb/plugin-seed)
 
-Fork this project to build your first PouchDB plugin.  It contains everything you need to test in Node, WebSQL, and IndexedDB.  It also includes a Travis config file so you
-can automatically run the tests in Travis.
+Relational Pouch is a plugin for PouchDB that allows you to interact with PouchDB/CouchDB as if it was a relational data store.
 
-Building
-----
-    npm install
-    npm run build
+It provides an enhanced API on top of PouchDB that is probably more familiar to fans of relational databases, and maybe even easier to use. At the same time, though, you still have CouchDB's awesome sync capabilities.
 
-Your plugin is now located at `dist/pouchdb.mypluginname.js` and `dist/pouchdb.mypluginname.min.js` and is ready for distribution.
+This plugin also uses clever tricks to avoid creating secondary indexes. This means that even if you have complex entity relations, your database operations should still be very fast.
 
-Getting Started
--------
+The main goal of this is to provide an API that is as similar to Ember Data/JSONAPI as possible.
 
-**First**, change the `name` in `package.json` to whatever you want to call your plugin.  Change the `build` script so that it writes to the desired filename (e.g. `pouchdb.mypluginname.js`).  Also, change the authors, description, git repo, etc.
+Installation
+------
 
-**Next**, modify the `index.js` to do whatever you want your plugin to do.  Right now it just adds a `pouch.sayHello()` function that says hello:
+### In the browser
+
+Download from GitHub, or use Bower:
+
+    bower install relational-pouch
+
+Then include it after `pouchdb.js` in your HTML page:
+
+```html
+<script src="pouchdb.js"></script>
+<script src="pouchdb.relational-pouch.js"></script>
+```
+
+### In Node.js
+
+    npm install relational-pouch
+
+And then attach it to the `PouchDB` object:
 
 ```js
-exports.sayHello = utils.toPromise(function (callback) {
-  callback(null, 'hello');
+var PouchDB = require('pouchdb');
+PouchDB.plugin(require('relational-pouch'));
+``
+
+API
+----------
+
+### db.setSchema(schema)
+
+Call this after you initialize your PouchDB, in order to define your entities and relationships:
+
+```js
+var db = new PouchDB('mydb'); // or 'http://localhost:5984/mydb' for CouchDB
+db.setSchema([
+  {
+    singular: 'post',
+    plural: 'posts',
+    relations: {
+      belongsTo: 'author',
+      hasMany: 'comment'
+    }
+  },
+  {
+    singular: 'author',
+    plural: 'authors',
+    relations: {
+      hasMany: 'post'
+    }
+  },
+  {
+    singular: 'comment',
+    plural: 'comments',
+    relations: {
+      belongsTo: 'post'
+    }
+  }
+]);
+```
+
+This is a synchronous method that does not return a Promise.
+
+You need to explicitly define the singular and plural forms of your entities, because I'm not a big fan of applying magic Anglocentric defaults to everything.
+
+You can define one-to-one, one-to-many, and many-to-many relationships using any combination of `belongsTo` and `hasMany` that you want. For more examples, read the [Ember guide to models](http://emberjs.com/guides/models/defining-models/), which is waht inspired this.
+
+Once you call `setSchema`, your `db` will be blessed with a `rel` object, which is where you can start using the rest of this plugin's API.
+
+### db.rel.save(type, object)
+
+Save an object with a particular type. This returns a Promise.
+
+```js
+db.rel.save('post', {
+  title: 'Rails is Omakase',
+  text: 'There are a lot of a-la-carte software...'
 });
 ```
 
-**Optionally**, you can add some tests in `tests/test.js`. These tests will be run both in the local database and a remote CouchDB, which is expected to be running at localhost:5984 in "Admin party" mode.
-
-The sample test is:
+Result:
 
 ```js
-
-it('should say hello', function () {
-  return db.sayHello().then(function (response) {
-    response.should.equal('hello');
-  });
-});
+{
+  "posts": [
+    {
+      "title": "Rails is Omakase",
+      "text": "There are a lot of a-la-carte software...",
+      "id": "14760983-285C-6D1F-9813-D82E08F1AC29",
+      "rev": "1-84df2c73028e5b8d0ae1cbb401959370"
+    }
+  ]
+}
 ```
+
+If you want, you can specify an `id`. Otherwise an `id` will be created for you.
+
+```js
+db.rel.save('post', {
+  title: 'Rails is Unagi',
+  text: 'Delicious unagi. Mmmmmm.',
+  id: 1
+})
+```
+
+Result:
+
+```js
+{
+  "posts": [
+    {
+      "title": "Rails is Unagi",
+      "text": "Delicious unagi. Mmmmmm.",
+      "id": 1,
+      "rev": "1-0ae315ee597b22cc4b1acf9e0edc35ba"
+    }
+  ]
+}
+```
+
+You'll notice the special field `rev`, which is a revision identifier. This will come into play later.
+
+`id` and `rev` are reserved fields when you use this plugin. You shouldn't try to use them for something else. An `id` can be any valid JSON object, although normally people use strings and ints.
+
+### db.rel.find('type')
+
+Find all objects with a given type. Returns a Promise.
+
+```js
+db.rel.find('post');
+```
+
+Result:
+
+```js
+{
+  "posts": [
+    {
+      "title": "Rails is Unagi",
+      "text": "Delicious unagi. Mmmmmm.",
+      "id": 1,
+      "rev": "1-0ae315ee597b22cc4b1acf9e0edc35ba"
+    },
+    {
+      "title": "Rails is Omakase",
+      "text": "There are a lot of a-la-carte software...",
+      "id": "14760983-285C-6D1F-9813-D82E08F1AC29",
+      "rev": "1-84df2c73028e5b8d0ae1cbb401959370"
+    }
+  ]
+}
+```
+
+The list will be empty if it doesn't find anything. The results are sorted by `id`, using [CouchDB view collation](http://couchdb.readthedocs.org/en/latest/couchapp/views/collation.html).
+
+### db.rel.find('type', id)
+
+Find an object with the given type and `id`. Returns a Promise.
+
+```js
+db.rel.find('post', 1);
+```
+
+Result:
+
+```js
+{
+  "posts": [
+    {
+      "title": "Rails is Unagi",
+      "text": "Delicious unagi. Mmmmmm.",
+      "id": 1,
+      "rev": "1-0ae315ee597b22cc4b1acf9e0edc35ba"
+    }
+  ]
+}
+```
+
+### db.rel.find('type', ids)
+
+Find multiple objects with multiple `id`s. Returns a Promise.
+
+```js
+db.rel.find('post', [1, 2, 3]);
+```
+
+Result:
+
+```js
+{
+  "posts": [
+    {
+      "title": "Rails is Unagi",
+      "text": "Delicious unagi. Mmmmmm.",
+      "id": 1,
+      "rev": "1-0ae315ee597b22cc4b1acf9e0edc35ba"
+    },
+    {
+      "title": "Maybe Rails is more like a sushi buffet",
+      "text": "Heresy!",
+      "id": 2,
+      "rev": "1-6d8ac6d86d01b91cfbe2f53e0c81bb86"
+    }
+  ]
+}
+```
+
+TODO: what happens if it's not found?
 
 Testing
 ----
@@ -76,28 +258,3 @@ You can run e.g.
     CLIENT=selenium:phantomjs npm test
 
 This will run the tests automatically and the process will exit with a 0 or a 1 when it's done. Firefox uses IndexedDB, and PhantomJS uses WebSQL.
-
-What to tell your users
---------
-
-Below is some boilerplate you can use for when you want a real README for your users.
-
-To use this plugin, include it after `pouchdb.js` in your HTML page:
-
-```html
-<script src="pouchdb.js"></script>
-<script src="pouchdb.mypluginname.js"></script>
-```
-
-Or to use it in Node.js, just npm install it:
-
-```
-npm install pouchdb-myplugin
-```
-
-And then attach it to the `PouchDB` object:
-
-```js
-var PouchDB = require('pouchdb');
-PouchDB.plugin(require('pouchdb-myplugin'));
-```

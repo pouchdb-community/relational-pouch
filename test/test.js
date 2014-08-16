@@ -46,7 +46,7 @@ function tests(dbName, dbType) {
   describe(dbType + ': basic tests', function () {
 
     it('should barf on bad types', function () {
-      db.initRelational([{
+      db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -60,7 +60,7 @@ function tests(dbName, dbType) {
 
     it('should store blog posts', function () {
 
-      db.initRelational([{
+      db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -88,7 +88,7 @@ function tests(dbName, dbType) {
     });
     it('should store blog posts with an id', function () {
 
-      db.initRelational([{
+      db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -119,7 +119,7 @@ function tests(dbName, dbType) {
 
     it('should store blog posts with an int id', function () {
 
-      db.initRelational([{
+      db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -150,7 +150,7 @@ function tests(dbName, dbType) {
 
     it('should update blog posts', function () {
 
-      db.initRelational([{
+      db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -181,7 +181,7 @@ function tests(dbName, dbType) {
 
     it('should find blog posts', function () {
 
-      db.initRelational([{
+      db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -223,7 +223,7 @@ function tests(dbName, dbType) {
 
     it('should orders correctly', function () {
 
-      db.initRelational([{
+      db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -276,7 +276,7 @@ function tests(dbName, dbType) {
 
     it('should find empty blog posts', function () {
 
-      db.initRelational([{
+      db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -290,7 +290,7 @@ function tests(dbName, dbType) {
 
     it('should separate independent types', function () {
 
-      db.initRelational([
+      db.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -317,7 +317,7 @@ function tests(dbName, dbType) {
 
     it('should find a single thing', function () {
 
-      db.initRelational([
+      db.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -352,7 +352,7 @@ function tests(dbName, dbType) {
 
     it('should find multiple things', function () {
 
-      db.initRelational([
+      db.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -394,7 +394,7 @@ function tests(dbName, dbType) {
 
     it('can delete', function () {
 
-      db.initRelational([
+      db.setSchema([
         {
           singular: 'post',
           plural: 'posts'
