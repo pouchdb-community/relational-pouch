@@ -391,5 +391,46 @@ function tests(dbName, dbType) {
         }]});
       });
     });
+
+    it('can delete', function () {
+
+      db.initRelational([
+        {
+          singular: 'post',
+          plural: 'posts'
+        }
+      ]);
+
+      return db.rel.save('post', {text: 'hey', id: 1}).then(function () {
+        return db.rel.save('post', {text: 'you', id: 2});
+      }).then(function () {
+        return db.rel.save('post', {text: 'there', id: 3});
+      }).then(function () {
+        return db.rel.find('post', 3);
+      }).then(function (res) {
+        return db.rel.del('post', res.posts[0]);
+      }).then(function () {
+        return db.rel.find('post', 3);
+      }).then(function (res) {
+        res.should.deep.equal({posts: []});
+        return db.rel.find('post', [3]);
+      }).then(function (res) {
+        res.should.deep.equal({posts: []});
+        return db.rel.find('post');
+      }).then(function (res) {
+        delete res.posts[0].rev;
+        delete res.posts[1].rev;
+        res.should.deep.equal({posts: [
+          {
+            text: 'hey',
+            id: 1
+          },
+          {
+            text: 'you',
+            id: 2
+          }
+        ]});
+      });
+    });
   });
 }
