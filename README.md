@@ -152,7 +152,7 @@ You'll notice the special field `rev`, which is a revision identifier. That'll c
 
 `id` and `rev` are reserved fields when you use this plugin. You shouldn't try to use them for something else. An `id` can be any string or integer.
 
-### db.rel.find('type')
+### db.rel.find(type)
 
 Find all objects with a given type. Returns a Promise.
 
@@ -183,7 +183,7 @@ Result:
 
 The list will be empty if it doesn't find anything. The results are sorted by `id`.
 
-### db.rel.find('type', id)
+### db.rel.find(type, id)
 
 Find an object with the given type and `id`. Returns a Promise.
 
@@ -206,7 +206,7 @@ Result:
 }
 ```
 
-### db.rel.find('type', ids)
+### db.rel.find(type, ids)
 
 Find multiple objects with multiple `id`s. Returns a Promise.
 
@@ -237,7 +237,7 @@ Result:
 
 If an `id` isn't found, it's simply not returned. Notice that above, there is no object with an `id` of `3`.
 
-### db.rel.del('type', object)
+### db.rel.del(type, object)
 
 Deletes the given object. Returns a Promise.
 
@@ -261,7 +261,7 @@ db.rel.get('post', 1).then(function (post) {
 
 ### Managing relationships
 
-Entity relationships are encoded using the [Ember Data Model](http://andycrum.github.io/ember-data-model-maker/), format which is a slight simplification of [json:api](http://jsonapi.org/).
+Entity relationships are encoded using the [Ember Data Model](http://andycrum.github.io/ember-data-model-maker/) format, which is a slight simplification of [json:api](http://jsonapi.org/).
 
 #### One-to-one relationships
 
