@@ -510,28 +510,29 @@ function tests(dbName, dbType) {
         });
       });
     });
-    /*
+
     it('does one-to-many', function () {
       db.setSchema([
         {
           singular: 'author',
           plural: 'authors',
           relations: {
-            'profile': {belongsTo: 'profile'}
+            profile: {belongsTo: 'profile'},
+            books: {hasMany: 'books'}
           }
         },
         {
           singular: 'profile',
           plural: 'profiles',
           relations: {
-            'author': {belongsTo: 'author'}
+            author: {belongsTo: 'author'}
           }
         },
         {
-          singular: 'profile',
-          plural: 'profiles',
+          singular: 'book',
+          plural: 'books',
           relations: {
-            'author': {belongsTo: 'author'}
+            author: {belongsTo: 'author'}
           }
         }
       ]);
@@ -539,7 +540,8 @@ function tests(dbName, dbType) {
       return db.rel.save('author', {
         name: 'Stephen King',
         id: 19,
-        profile: 21
+        profile: 21,
+        books: [1, 2, 3]
       }).then(function () {
         return db.rel.save('profile', {
           description: 'nice masculine jawline',
@@ -547,11 +549,165 @@ function tests(dbName, dbType) {
           author: 19
         });
       }).then(function () {
+        return db.rel.save('book', {
+          id: 1,
+          title: 'The Gunslinger'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 2,
+          title: 'The Drawing of the Three'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 3,
+          title: 'The Wastelands'
+        });
+      }).then(function () {
         return db.rel.find('author');
       }).then(function (res) {
         console.log(JSON.stringify(res));
+        ['authors', 'profiles', 'books'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "profile": 21,
+              "books": [
+                1,
+                2,
+                3
+              ],
+              "id": 19
+            }
+          ],
+          "profiles": [
+            {
+              "description": "nice masculine jawline",
+              "author": 19,
+              "id": 21
+            }
+          ],
+          "books": [
+            {
+              "title": "The Gunslinger",
+              "id": 1
+            },
+            {
+              "title": "The Drawing of the Three",
+              "id": 2
+            },
+            {
+              "title": "The Wastelands",
+              "id": 3
+            }
+          ]
+        });
       });
     });
-    */
+    it('does one-to-many and keeps the right order', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            profile: {belongsTo: 'profile'},
+            books: {hasMany: 'books'}
+          }
+        },
+        {
+          singular: 'profile',
+          plural: 'profiles',
+          relations: {
+            author: {belongsTo: 'author'}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            author: {belongsTo: 'author'}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 19,
+        profile: 21,
+        books: [3, 1, 2]
+      }).then(function () {
+        return db.rel.save('profile', {
+          description: 'nice masculine jawline',
+          id: 21,
+          author: 19
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 1,
+          title: 'The Gunslinger'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 2,
+          title: 'The Drawing of the Three'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 3,
+          title: 'The Wastelands'
+        });
+      }).then(function () {
+        return db.rel.find('author');
+      }).then(function (res) {
+        console.log(JSON.stringify(res));
+        ['authors', 'profiles', 'books'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "profile": 21,
+              "books": [
+                3,
+                1,
+                2
+              ],
+              "id": 19
+            }
+          ],
+          "profiles": [
+            {
+              "description": "nice masculine jawline",
+              "author": 19,
+              "id": 21
+            }
+          ],
+          "books": [
+            {
+              "title": "The Gunslinger",
+              "id": 1
+            },
+            {
+              "title": "The Drawing of the Three",
+              "id": 2
+            },
+            {
+              "title": "The Wastelands",
+              "id": 3
+            }
+          ]
+        });
+      });
+    });
   });
 }
