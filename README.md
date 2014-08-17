@@ -50,7 +50,11 @@ API
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
 * [`db.rel.del(type, object)`](#dbreldeltype-object)
 * [Managing relationships](#managing-relationships)
-* [Special topic: managing revisions (rev)](#special-topic-managing-revisions-rev)
+  * [One-to-one](#one-to-one-relationships)
+  * [Many-to-one](#many-to-one-relationships)
+  * [Many-to-many](#many-to-many-relationships)
+  * [Advanced](#advanced)
+* [Managing revisions ("rev")](#managing-revisions-rev)
 
 
 ### db.setSchema(schema)
@@ -527,7 +531,7 @@ Result:
 }
 ```
 
-#### Notes on relations
+#### Advanced
 
 Deeply nested relationships are also possible. Everything just ends up being sideloaded in the same JSON object response.
 
@@ -652,7 +656,7 @@ Result:
 The plugin is not smart enough to infer bidirectional relationships, so you have to attach the relation to both object. E.g. in the above example, each `book` explicitly has its `author` set, and the `author` explicitly has his `books` set. If you want to add a new book, you would need to `save()` the book, add it to the author's list of books, and then `save()` the author.
 
 
-### Special topic: managing revisions ("rev")
+### Managing revisions ("rev")
 
 When you update an existing object, you'll need to include the `rev`, or else you'll get a 409 conflict error. This is standard CouchDB/PouchDB behavior, so the common idiom is:
 
