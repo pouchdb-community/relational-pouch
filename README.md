@@ -36,7 +36,7 @@ And then attach it to the `PouchDB` object:
 ```js
 var PouchDB = require('pouchdb');
 PouchDB.plugin(require('relational-pouch'));
-``
+```
 
 API
 ----------
