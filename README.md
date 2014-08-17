@@ -176,7 +176,7 @@ Result:
 }
 ```
 
-The list will be empty if it doesn't find anything. The results are sorted by `id`, using [CouchDB view collation](http://couchdb.readthedocs.org/en/latest/couchapp/views/collation.html).
+The list will be empty if it doesn't find anything. The results are sorted by `id`.
 
 ### db.rel.find('type', id)
 
