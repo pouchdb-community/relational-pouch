@@ -16,7 +16,7 @@ chai.use(require("chai-as-promised"));
 // more variables you might want
 //
 var should = chai.should(); // var should = chai.should();
-require('bluebird'); // var Promise = require('bluebird');
+var Promise = require('bluebird'); // var Promise = require('bluebird');
 
 var dbs;
 if (process.browser) {
@@ -453,6 +453,78 @@ function tests(dbName, dbType) {
     });
   });
 
+  describe(dbType + ': invalid relations', function () {
+    this.timeout(30000);
+
+    it('fails if you include no relations', function () {
+      return Promise.resolve().then(function () {
+        db.setSchema([{
+          singular: 'foo',
+          plural: 'foos',
+          relations: {}
+        }]);
+      }).then(function () {
+        true.should.equal(false);
+      }).catch(function (err) {
+        should.exist(err);
+      });
+    });
+
+    it('fails if you include empty relationship definition', function () {
+      return Promise.resolve().then(function () {
+        db.setSchema([{
+          singular: 'foo',
+          plural: 'foos',
+          relations: {
+            bazes: {}
+          }
+        }]);
+      }).then(function () {
+        true.should.equal(false);
+      }).catch(function (err) {
+        should.exist(err);
+      });
+    });
+
+    it('fails for unknown entity types', function () {
+      return Promise.resolve().then(function () {
+        db.setSchema([{
+          singular: 'foo',
+          plural: 'foos',
+          relations: {
+            bazes: {hasMany: 'baz'}
+          }
+        }]);
+      }).then(function () {
+        true.should.equal(false);
+      }).catch(function (err) {
+        should.exist(err);
+      });
+    });
+
+    it('fails for unknown relation types', function () {
+      return Promise.resolve().then(function () {
+        db.setSchema([
+          {
+            singular: 'foo',
+            plural: 'foos',
+            relations: {
+              bazes: {hasAFucktonOf: 'baz'}
+            }
+          },
+          {
+            singular: 'baz',
+            plural: 'bazes'
+          }
+        ]);
+      }).then(function () {
+        true.should.equal(false);
+      }).catch(function (err) {
+        should.exist(err);
+      });
+    });
+  });
+
   describe(dbType + ': relational tests', function () {
     this.timeout(30000);
 
@@ -511,6 +583,241 @@ function tests(dbName, dbType) {
       });
     });
 
+    it('does one-to-many with empty dependents', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            'books': {hasMany: 'book'}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            'author': {belongsTo: 'author'}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 19,
+        profile: 21
+      }).then(function () {
+        return db.rel.find('author');
+      }).then(function (res) {
+        res.authors[0].rev.should.be.a('string');
+        delete res.authors[0].rev;
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "profile": 21,
+              "id": 19,
+              "books": []
+            }
+          ]
+        });
+      });
+    });
+
+    it('does one-to-many with several entities', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            'books': {hasMany: 'book'}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            'author': {belongsTo: 'author'}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 19,
+        books: [1]
+      }).then(function () {
+        return db.rel.save('author', {
+          name: 'George R. R. Martin',
+          id: 1,
+          books: [6, 7]
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'It',
+          id: 1,
+          author: 19
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'A Game of Thrones',
+          id: 6,
+          author: 1
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'The Hedge Knight',
+          id: 7,
+          author: 1
+        });
+      }).then(function () {
+        return db.rel.find('author');
+      }).then(function (res) {
+        ['authors', 'books'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "George R. R. Martin",
+              "books": [
+                6,
+                7
+              ],
+              "id": 1
+            },
+            {
+              "name": "Stephen King",
+              "books": [
+                1
+              ],
+              "id": 19
+            }
+          ],
+          "books": [
+            {
+              "title": "It",
+              "id": 1,
+              author: 19
+            },
+            {
+              "title": "A Game of Thrones",
+              "id": 6,
+              author: 1
+            },
+            {
+              "title": "The Hedge Knight",
+              "id": 7,
+              author: 1
+            }
+          ]
+        });
+      });
+    });
+    it('does many-to-many with several entities', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            'books': {hasMany: 'book'}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            'authors': {hasMany: 'author'}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 19,
+        books: [1, 2]
+      }).then(function () {
+        return db.rel.save('author', {
+          name: 'Peter Straub',
+          id: 2,
+          books: [2, 3]
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'It',
+          id: 1,
+          authors: [19]
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'The Talisman',
+          id: 2,
+          authors: [19, 2]
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'Ghost Story',
+          id: 3,
+          authors: [2]
+        });
+      }).then(function () {
+        return db.rel.find('author');
+      }).then(function (res) {
+        ['authors', 'books'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Peter Straub",
+              "books": [
+                2,
+                3
+              ],
+              "id": 2
+            },
+            {
+              "name": "Stephen King",
+              "books": [
+                1,
+                2
+              ],
+              "id": 19
+            }
+          ],
+          "books": [
+            {
+              "title": "It",
+              "authors": [
+                19
+              ],
+              "id": 1
+            },
+            {
+              "title": "The Talisman",
+              "authors": [
+                19,
+                2
+              ],
+              "id": 2
+            },
+            {
+              "title": "Ghost Story",
+              "authors": [
+                2
+              ],
+              "id": 3
+            }
+          ]
+        });
+      });
+    });
+
     it('does one-to-many', function () {
       db.setSchema([
         {
@@ -562,6 +869,109 @@ function tests(dbName, dbType) {
         return db.rel.save('book', {
           id: 3,
           title: 'The Wastelands'
+        });
+      }).then(function () {
+        return db.rel.find('author');
+      }).then(function (res) {
+        ['authors', 'profiles', 'books'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "profile": 21,
+              "books": [
+                1,
+                2,
+                3
+              ],
+              "id": 19
+            }
+          ],
+          "profiles": [
+            {
+              "description": "nice masculine jawline",
+              "author": 19,
+              "id": 21
+            }
+          ],
+          "books": [
+            {
+              "title": "The Gunslinger",
+              "id": 1
+            },
+            {
+              "title": "The Drawing of the Three",
+              "id": 2
+            },
+            {
+              "title": "The Wastelands",
+              "id": 3
+            }
+          ]
+        });
+      });
+    });
+
+    it('does one-to-many with embedded relations', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            profile: {belongsTo: 'profile'},
+            books: {hasMany: 'books'}
+          }
+        },
+        {
+          singular: 'profile',
+          plural: 'profiles',
+          relations: {
+            author: {belongsTo: 'author'}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            author: {belongsTo: 'author'}
+          }
+        }
+      ]);
+
+      var profile = {
+        description: 'nice masculine jawline',
+        id: 21,
+        author: 19
+      };
+      var book1 = {
+        id: 1,
+        title: 'The Gunslinger'
+      };
+      var book2 = {
+        id: 2,
+        title: 'The Drawing of the Three'
+      };
+      var book3 = {
+        id: 3,
+        title: 'The Wastelands'
+      };
+      return db.rel.save('profile', profile).then(function () {
+        return db.rel.save('book', book1);
+      }).then(function () {
+        return db.rel.save('book', book2);
+      }).then(function () {
+        return db.rel.save('book', book3);
+      }).then(function () {
+        return db.rel.save('author', {
+          name: 'Stephen King',
+          id: 19,
+          profile: profile,
+          books: [book1, book2, book3]
         });
       }).then(function () {
         return db.rel.find('author');
