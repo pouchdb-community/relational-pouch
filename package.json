@@ -10,8 +10,8 @@
   "keywords": [
     "pouch",
     "pouchdb",
+    "relational",
     "plugin",
-    "seed",
     "couch",
     "couchdb"
   ],
