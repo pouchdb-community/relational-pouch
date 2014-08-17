@@ -5,11 +5,11 @@ Relational Pouch
 
 Relational Pouch is a plugin for PouchDB that allows you to interact with PouchDB/CouchDB as if it was a relational data store.
 
-It provides an enhanced API on top of PouchDB that is probably more familiar to fans of relational databases, and maybe even easier to use. At the same time, though, you still have CouchDB's awesome sync capabilities.
+It provides an enhanced API on top of PouchDB that is probably more familiar to fans of relational databases, and maybe even easier to use. At the same time, though, you still have CouchDB's awesome indexing and sync capabilities.
 
 This plugin also uses clever tricks to avoid creating secondary indexes. This means that even if you have complex entity relations, your database operations should still be very fast.
 
-The main goal of this is to provide an API that is as similar to Ember Data/JSONAPI as possible.
+The main goal of this is to provide an API that is as similar to Ember Data/JSONAPI as possible, while still being performant and Pouch-like.
 
 Installation
 ------
@@ -114,7 +114,7 @@ db.rel.save('post', {
   title: 'Rails is Unagi',
   text: 'Delicious unagi. Mmmmmm.',
   id: 1
-})
+});
 ```
 
 Result:
@@ -132,7 +132,7 @@ Result:
 }
 ```
 
-You'll notice the special field `rev`, which is a revision identifier. This will come into play later.
+You'll notice the special field `rev`, which is a revision identifier. That'll come into play later.
 
 `id` and `rev` are reserved fields when you use this plugin. You shouldn't try to use them for something else. An `id` can be any valid JSON object, although normally people use strings and ints.
 
@@ -219,7 +219,68 @@ Result:
 }
 ```
 
-TODO: what happens if it's not found?
+If an `id` isn't found, it's simply not returned. Notice that above, there is no object with an `id` of `3`.
+
+### db.rel.del('type', object)
+
+Deletes the given object. Returns a Promise.
+
+```js
+db.rel.del('post', {id:1, rev:"1-0560dbb11ead319c9f5bc1f667ea8e84"});
+```
+
+Result:
+
+```js
+{"deleted":true}
+```
+
+The minimum you need to delete something is an `id` and a `rev`. The easiest pattern is to just `find` it before deleting it:
+
+```js
+db.rel.get('post', 1).then(function (post) {
+  return db.rel.del('post', post);
+});
+```
+
+
+### Special topic: managing revisions (rev)
+
+When you update an existing object, you'll need to include the `rev`, or else you'll get a 409 conflict error. This is standard CouchDB/PouchDB behavior, so the common idiom is:
+
+```js
+db.rel.get('post', 1).then(function (post) {
+  // do whatever you want to do to update the post
+  return db.rel.save('post', post).catch(function (err) {
+    if (err.code === 409) { // conflict
+      // handle the conflict somehow. e.g. ask the user to compare the two versions,
+      // or just try the whole thing again
+    } else {
+      throw err; // some other error
+    }
+  });
+});
+```
+
+This also applies to deletions:
+
+```js
+db.rel.get('post', 1).then(function (post) {
+  return db.rel.del('post', post).catch(function (err) {
+    if (err.code === 409) { // conflict
+      // handle the conflict
+    } else {
+      throw err; // some other error
+    }
+  });
+});
+```
+
+To avoid getting into a long discussion of why you have to do this: suffice it to say, when you build a client-server sync architecture, you are building a *distributed system*. Distributed systems are hard, and managing conflicts is just a reality when you have multiple computers that aren't perfectly in sync.
+
+You will have to deal with conflicts sooner or later. With PouchDB and CouchDB, you simply pay that cost up-front.
+
+Jan Lenhardt has [a nice writeup](http://writing.jan.io/2013/12/19/understanding-couchdb-conflicts.html) on this.
 
 Testing
 ----
