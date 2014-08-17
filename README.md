@@ -9,7 +9,7 @@ It provides an enhanced API on top of PouchDB that is probably more familiar to 
 
 This plugin also uses clever tricks to avoid creating secondary indexes. This means that even if you have complex entity relations, your database operations should still be very fast.
 
-The main goal of this is to provide an API that is as similar to [Ember Data](http://emberjs.com/api/data/) and [JSONAPI](http://jsonapi.org/) as possible, while still being performant and Pouch-like.
+The main goal of this is to provide an API that is as similar to [Ember Data](http://emberjs.com/api/data/) and [json:api](http://jsonapi.org/) as possible, while still being performant and Pouch-like.
 
 Installation
 ------
@@ -49,6 +49,7 @@ API
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
 * [`db.rel.del(type, object)`](#dbreldeltype-object)
+* [Managing relationships](#managing-relationships)
 * [Special topic: managing revisions (rev)](#special-topic-managing-revisions-rev)
 
 
@@ -254,8 +255,404 @@ db.rel.get('post', 1).then(function (post) {
 });
 ```
 
+### Managing relationships
 
-### Special topic: managing revisions (rev)
+Entity relationships are encoded using the [Ember Data Model](http://andycrum.github.io/ember-data-model-maker/), format which is a slight simplification of [json:api](http://jsonapi.org/).
+
+#### One-to-one relationships
+
+An author has exactly one profile, and vice-versa:
+
+```js
+db.setSchema([
+  {
+    singular: 'author',
+    plural: 'authors',
+    relations: {
+      'profile': {belongsTo: 'profile'}
+    }
+  },
+  {
+    singular: 'profile',
+    plural: 'profiles',
+    relations: {
+      'author': {belongsTo: 'author'}
+    }
+  }
+]);
+
+db.rel.save('author', {
+  name: 'Stephen King',
+  id: 19,
+  profile: 21
+}).then(function () {
+  return db.rel.save('profile', {
+    description: 'nice masculine jawline',
+    id: 21,
+    author: 19
+  });
+}).then(function () {
+  return db.rel.find('author');
+});
+```
+
+Result:
+
+```js
+{
+  "authors": [
+    {
+      "name": "Stephen King",
+      "profile": 21,
+      "id": 19,
+      "rev": "1-bf705a912bf672b30ad262b33a19c5c3"
+    }
+  ],
+  "profiles": [
+    {
+      "description": "nice masculine jawline",
+      "author": 19,
+      "id": 21,
+      "rev": "1-ef86a08ea3243ea59302ceaa04afd59f"
+    }
+  ]
+}
+```
+
+#### Many-to-one relationships
+
+An author has many books:
+
+```js
+db.setSchema([
+  {
+    singular: 'author',
+    plural: 'authors',
+    relations: {
+      'books': {hasMany: 'book'}
+    }
+  },
+  {
+    singular: 'book',
+    plural: 'books',
+    relations: {
+      'author': {belongsTo: 'author'}
+    }
+  }
+]);
+
+db.rel.save('author', {
+  name: 'Stephen King',
+  id: 19,
+  books: [1]
+}).then(function () {
+  return db.rel.save('author', {
+    name: 'George R. R. Martin',
+    id: 1,
+    books: [6, 7]
+  });
+}).then(function () {
+  return db.rel.save('book', {
+    title: 'It',
+    id: 1,
+    author: 19
+  });
+}).then(function () {
+  return db.rel.save('book', {
+    title: 'A Game of Thrones',
+    id: 6,
+    author: 1
+  });
+}).then(function () {
+  return db.rel.save('book', {
+    title: 'The Hedge Knight',
+    id: 7,
+    author: 1
+  });
+}).then(function () {
+  return db.rel.find('author');
+});
+```
+
+Result:
+
+```js
+{
+  "authors": [
+    {
+      "name": "George R. R. Martin",
+      "books": [
+        6,
+        7
+      ],
+      "id": 1,
+      "rev": "1-04e165889a4a9303a6dc07a54cee9741"
+    },
+    {
+      "name": "Stephen King",
+      "books": [
+        1
+      ],
+      "id": 19,
+      "rev": "1-38580117cb4a1ddb2c7151453a7f9129"
+    }
+  ],
+  "books": [
+    {
+      "title": "It",
+      "author": 19,
+      "id": 1,
+      "rev": "1-1b7ea74936a8034aee7da27ffd36a63f"
+    },
+    {
+      "title": "A Game of Thrones",
+      "author": 1,
+      "id": 6,
+      "rev": "1-a6f0dc69fc79d5565639074b5defa52d"
+    },
+    {
+      "title": "The Hedge Knight",
+      "author": 1,
+      "id": 7,
+      "rev": "1-4988aa3215070c71e1505a05f90bb60f"
+    }
+  ]
+}
+```
+
+#### Many-to-many relationships
+
+```js
+db.setSchema([
+  {
+    singular: 'author',
+    plural: 'authors',
+    relations: {
+      'books': {hasMany: 'book'}
+    }
+  },
+  {
+    singular: 'book',
+    plural: 'books',
+    relations: {
+      'authors': {hasMany: 'author'}
+    }
+  }
+]);
+
+db.rel.save('author', {
+  name: 'Stephen King',
+  id: 19,
+  books: [1, 2]
+}).then(function () {
+  return db.rel.save('author', {
+    name: 'Peter Straub',
+    id: 2,
+    books: [2, 3]
+  });
+}).then(function () {
+  return db.rel.save('book', {
+    title: 'It',
+    id: 1,
+    authors: [19]
+  });
+}).then(function () {
+  return db.rel.save('book', {
+    title: 'The Talisman',
+    id: 2,
+    authors: [19, 2]
+  });
+}).then(function () {
+  return db.rel.save('book', {
+    title: 'Ghost Story',
+    id: 3,
+    authors: [2]
+  });
+}).then(function () {
+  return db.rel.find('author');
+});
+```
+
+Result:
+
+```js
+{
+  "authors": [
+    {
+      "name": "Peter Straub",
+      "books": [
+        2,
+        3
+      ],
+      "id": 2,
+      "rev": "1-92901c8e3e0775765777bfcbe8f4c2dd"
+    },
+    {
+      "name": "Stephen King",
+      "books": [
+        1,
+        2
+      ],
+      "id": 19,
+      "rev": "1-d70d9fe033f583493029372c88ae21d0"
+    }
+  ],
+  "books": [
+    {
+      "title": "It",
+      "authors": [
+        19
+      ],
+      "id": 1,
+      "rev": "1-96751a2a5bb7b0fd70564efe6856dbd6"
+    },
+    {
+      "title": "The Talisman",
+      "authors": [
+        19,
+        2
+      ],
+      "id": 2,
+      "rev": "1-9faf8c4f72db782dacce16a7849d156b"
+    },
+    {
+      "title": "Ghost Story",
+      "authors": [
+        2
+      ],
+      "id": 3,
+      "rev": "1-7564a1195f143e24ebf24d914c60d6be"
+    }
+  ]
+}
+```
+
+#### Notes on relations
+
+Deeply nested relationships are also possible. Everything just ends up being sideloaded in the same JSON object response.
+
+```js
+{
+  "lions" : [...],
+  "tigers" : [...],
+  "bears" : [...]
+}
+```
+
+You must explicitly provide the `id`s of dependent objects, and they must be saved independently. There is no cascading at all.
+
+You can attach the full entity object with an `id` to another object, but if you include an object without an `id`, it will be ignored.
+
+```js
+db.setSchema([
+  {
+    singular: 'author',
+    plural: 'authors',
+    relations: {
+      profile: {belongsTo: 'profile'},
+      books: {hasMany: 'books'}
+    }
+  },
+  {
+    singular: 'profile',
+    plural: 'profiles',
+    relations: {
+      author: {belongsTo: 'author'}
+    }
+  },
+  {
+    singular: 'book',
+    plural: 'books',
+    relations: {
+      author: {belongsTo: 'author'}
+    }
+  }
+]);
+
+var profile = {
+  description: 'nice masculine jawline',
+  id: 21,
+  author: 19
+};
+var book1 = {
+  id: 1,
+  title: 'The Gunslinger'
+};
+var book2 = {
+  id: 2,
+  title: 'The Drawing of the Three'
+};
+var book3 = {
+  id: 3,
+  title: 'The Wastelands'
+};
+db.rel.save('profile', profile).then(function () {
+  return db.rel.save('book', book1);
+}).then(function () {
+  return db.rel.save('book', book2);
+}).then(function () {
+  return db.rel.save('book', book3);
+}).then(function () {
+  return db.rel.save('author', {
+    name: 'Stephen King',
+    id: 19,
+    profile: profile,
+    books: [book1, book2, book3]
+  });
+}).then(function () {
+  return db.rel.find('author');
+});
+```
+
+Result:
+
+```js
+{
+  "authors": [
+    {
+      "name": "Stephen King",
+      "profile": 21,
+      "books": [
+        1,
+        2,
+        3
+      ],
+      "id": 19,
+      "rev": "1-308a75619dc1b96bece7b6996d36d18b"
+    }
+  ],
+  "profiles": [
+    {
+      "description": "nice masculine jawline",
+      "author": 19,
+      "id": 21,
+      "rev": "1-7bd39e62046a0816f9c5a3836a548ec8"
+    }
+  ],
+  "books": [
+    {
+      "title": "The Gunslinger",
+      "id": 1,
+      "rev": "1-f3a305eae85642ce74412141ec0ae0bf"
+    },
+    {
+      "title": "The Drawing of the Three",
+      "id": 2,
+      "rev": "1-1c94deba48af8c1c2df1c5545246846b"
+    },
+    {
+      "title": "The Wastelands",
+      "id": 3,
+      "rev": "1-a4a96e3f9e2cb3d516605fa46bbed080"
+    }
+  ]
+}
+```
+
+The plugin is not smart enough to infer bidirectional relationships, so you have to attach the relation to both object. E.g. in the above example, each `book` explicitly has its `author` set, and the `author` explicitly has his `books` set. If you want to add a new book, you would need to `save()` the book, add it to the author's list of books, and then `save()` the author.
+
+
+### Special topic: managing revisions ("rev")
 
 When you update an existing object, you'll need to include the `rev`, or else you'll get a 409 conflict error. This is standard CouchDB/PouchDB behavior, so the common idiom is:
 
