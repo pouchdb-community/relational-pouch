@@ -43,7 +43,7 @@ API
 
 ### Summary
 
-* [`db.setSchema()`](#dbsetschemaschema)
+* [`db.setSchema(schema)`](#dbsetschemaschema)
 * [`db.rel.save(type, object)`](#dbrelsavetype-object)
 * [`db.rel.find(type)`](#dbrelfindtype)
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
@@ -63,22 +63,22 @@ db.setSchema([
     singular: 'post',
     plural: 'posts',
     relations: {
-      belongsTo: 'author',
-      hasMany: 'comment'
+      author: {belongsTo: 'author'},
+      comments: {hasMany: 'comment'}
     }
   },
   {
     singular: 'author',
     plural: 'authors',
     relations: {
-      hasMany: 'post'
+      posts: {hasMany: 'post'}
     }
   },
   {
     singular: 'comment',
     plural: 'comments',
     relations: {
-      belongsTo: 'post'
+      post: {belongsTo: 'post'}
     }
   }
 ]);
