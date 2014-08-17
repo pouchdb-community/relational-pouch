@@ -46,7 +46,7 @@ API
 Call this after you initialize your PouchDB, in order to define your entities and relationships:
 
 ```js
-var db = new PouchDB('mydb'); // or 'http://localhost:5984/mydb' for CouchDB
+var db = new PouchDB('mydb');
 db.setSchema([
   {
     singular: 'post',
