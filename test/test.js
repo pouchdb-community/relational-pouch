@@ -487,8 +487,71 @@ function tests(dbName, dbType) {
       }).then(function () {
         return db.rel.find('author');
       }).then(function (res) {
+        res.authors[0].rev.should.be.a('string');
+        delete res.authors[0].rev;
+
+        res.profiles[0].rev.should.be.a('string');
+        delete res.profiles[0].rev;
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "profile": 21,
+              "id": 19
+            }
+          ],
+          "profiles": [
+            {
+              "description": "nice masculine jawline",
+              "author": 19,
+              "id": 21
+            }
+          ]
+        });
+      });
+    });
+    /*
+    it('does one-to-many', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            'profile': {belongsTo: 'profile'}
+          }
+        },
+        {
+          singular: 'profile',
+          plural: 'profiles',
+          relations: {
+            'author': {belongsTo: 'author'}
+          }
+        },
+        {
+          singular: 'profile',
+          plural: 'profiles',
+          relations: {
+            'author': {belongsTo: 'author'}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 19,
+        profile: 21
+      }).then(function () {
+        return db.rel.save('profile', {
+          description: 'nice masculine jawline',
+          id: 21,
+          author: 19
+        });
+      }).then(function () {
+        return db.rel.find('author');
+      }).then(function (res) {
         console.log(JSON.stringify(res));
       });
     });
+    */
   });
 }
