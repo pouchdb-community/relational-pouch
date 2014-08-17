@@ -41,6 +41,16 @@ PouchDB.plugin(require('relational-pouch'));
 API
 ----------
 
+### Summary
+
+* [`db.setSchema()`](#dbsetschemaschema)
+* [`db.rel.save(type, object)`](#dbrelsavetype-object)
+* [`db.rel.find(type)`](#dbrelfindtype)
+* [`db.rel.find(type, id)`](#dbrelfindtype-id)
+* [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
+* [`db.rel.del(type, object)`](#dbreldeltype-object)
+
+
 ### db.setSchema(schema)
 
 Call this after you initialize your PouchDB, in order to define your entities and relationships:
@@ -75,9 +85,9 @@ db.setSchema([
 
 This is a synchronous method that does not return a Promise.
 
-You need to explicitly define the singular and plural forms of your entities, because I'm not a big fan of applying magic Anglocentric defaults to everything.
+You can define one-to-one, one-to-many, and many-to-many relationships using any combination of `belongsTo` and `hasMany` that you want. For more examples, read the [Ember guide to models](http://emberjs.com/guides/models/defining-models/), which is what inspired this.
 
-You can define one-to-one, one-to-many, and many-to-many relationships using any combination of `belongsTo` and `hasMany` that you want. For more examples, read the [Ember guide to models](http://emberjs.com/guides/models/defining-models/), which is waht inspired this.
+You need to explicitly define the singular and plural forms of your entities, because I'm not a big fan of applying magic Anglocentric defaults to everything.
 
 Once you call `setSchema`, your `db` will be blessed with a `rel` object, which is where you can start using the rest of this plugin's API.
 
