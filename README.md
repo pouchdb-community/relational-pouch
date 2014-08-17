@@ -426,6 +426,8 @@ Result:
 
 #### Many-to-many relationships
 
+Peter Straub actually co-wrote *The Talisman* with Stephen King. So a book can have many authors, and an author can have many books:
+
 ```js
 db.setSchema([
   {
@@ -543,7 +545,7 @@ Deeply nested relationships are also possible. Everything just ends up being sid
 }
 ```
 
-You must explicitly provide the `id`s of dependent objects, and they must be saved independently. There is no cascading at all.
+When you `save`, you must explicitly provide the `id`s of dependent objects, and they must be saved independently. There is no cascading at all.
 
 You can attach the full entity object with an `id` to another object, but if you include an object without an `id`, it will be ignored.
 
