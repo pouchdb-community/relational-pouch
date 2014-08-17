@@ -49,6 +49,7 @@ API
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
 * [`db.rel.del(type, object)`](#dbreldeltype-object)
+* [Special topic: managing revisions (rev)](#special-topic-managing-revisions-rev)
 
 
 ### db.setSchema(schema)
