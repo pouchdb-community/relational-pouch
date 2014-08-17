@@ -9,7 +9,7 @@ It provides an enhanced API on top of PouchDB that is probably more familiar to 
 
 This plugin also uses clever tricks to avoid creating secondary indexes. This means that even if you have complex entity relations, your database operations should still be very fast.
 
-The main goal of this is to provide an API that is as similar to Ember Data/JSONAPI as possible, while still being performant and Pouch-like.
+The main goal of this is to provide an API that is as similar to [Ember Data](http://emberjs.com/api/data/) and [JSONAPI](http://jsonapi.org/) as possible, while still being performant and Pouch-like.
 
 Installation
 ------
