@@ -1,11 +1,11 @@
 {
-  "name": "pouchdb-plugin-seed",
+  "name": "relational-pouch",
   "version": "0.1.0",
-  "description": "PouchDB Plugin Seed project",
+  "description": "PouchDB, relational style",
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/pouchdb/plugin-seed.git"
+    "url": "git://github.com/nolanlawson/relational-pouch.git"
   },
   "keywords": [
     "pouch",
@@ -18,7 +18,7 @@
   "author": "",
   "license": "Apache",
   "bugs": {
-    "url": "https://github.com/pouchdb/plugin-seed/issues"
+    "url": "https://github.com/nolanlawson/relational-pouch/issues"
   },
   "scripts": {
     "test-node": "TEST_DB=testdb,http://localhost:5984/testdb istanbul test ./node_modules/mocha/bin/_mocha test/test.js",
