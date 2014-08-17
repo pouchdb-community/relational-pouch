@@ -1,7 +1,7 @@
 Relational Pouch
 =====
 
-[![Build Status](https://travis-ci.org/pouchdb/plugin-seed.svg)](https://travis-ci.org/pouchdb/plugin-seed)
+[![Build Status](https://travis-ci.org/nolanlawson/relational-pouch.svg)](https://travis-ci.org/nolanlawson/relational-pouch)
 
 Relational Pouch is a plugin for PouchDB that allows you to interact with PouchDB/CouchDB as if it was a relational data store.
 
