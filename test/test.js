@@ -32,7 +32,6 @@ dbs.split(',').forEach(function (db) {
 });
 
 function tests(dbName, dbType) {
-
   var db;
 
   beforeEach(function () {
@@ -44,6 +43,7 @@ function tests(dbName, dbType) {
   });
 
   describe(dbType + ': basic tests', function () {
+    this.timeout(30000);
 
     it('should barf on bad types', function () {
       db.setSchema([{
@@ -449,6 +449,45 @@ function tests(dbName, dbType) {
             id: 2
           }
         ]});
+      });
+    });
+  });
+
+  describe(dbType + ': relational tests', function () {
+    this.timeout(30000);
+
+    it('does one-to-one', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            'profile': {belongsTo: 'profile'}
+          }
+        },
+        {
+          singular: 'profile',
+          plural: 'profiles',
+          relations: {
+            'author': {belongsTo: 'author'}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 19,
+        profile: 21
+      }).then(function () {
+        return db.rel.save('profile', {
+          description: 'nice masculine jawline',
+          id: 21,
+          author: 19
+        });
+      }).then(function () {
+        return db.rel.find('author');
+      }).then(function (res) {
+        console.log(JSON.stringify(res));
       });
     });
   });
