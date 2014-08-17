@@ -145,7 +145,7 @@ Result:
 
 You'll notice the special field `rev`, which is a revision identifier. That'll come into play later.
 
-`id` and `rev` are reserved fields when you use this plugin. You shouldn't try to use them for something else. An `id` can be any valid JSON object, although normally people use strings and ints.
+`id` and `rev` are reserved fields when you use this plugin. You shouldn't try to use them for something else. An `id` can be any string or integer.
 
 ### db.rel.find('type')
 
