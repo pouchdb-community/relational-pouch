@@ -696,6 +696,17 @@ You will have to deal with conflicts sooner or later. With PouchDB and CouchDB, 
 
 Jan Lenhardt has [a nice writeup](http://writing.jan.io/2013/12/19/understanding-couchdb-conflicts.html) on this.
 
+How does it work?
+-----
+
+A relational Pouch/Couch is just a regular database that has been partitioned by type.
+
+So for instance, a document with type "pokemon" and id "1" might have an actual `_id` like "pokemon_1", whereas a "trainer" with id "2" might have an actual `_id` like "trainer_2". It's not rocket science.
+
+What is important is that this plugin leverages the very efficient `allDocs()` API, rather than relying on the performance-killing `query()` API. Also, it joins related documents by simply making extra requests rather than trying to use native map/reduce joined documents.
+
+Although this method may seem naïve, in practice you get much better performance, because secondary indexes in Pouch/Couch are just plain slow. (I wrote most of Pouch's secondary index logic, so I ought to know.)
+
 Testing
 ----
 
