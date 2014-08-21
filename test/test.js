@@ -716,6 +716,229 @@ function tests(dbName, dbType) {
         });
       });
     });
+    it('does many-to-many with recursive relationship', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            'books': {hasMany: 'book'},
+            'publisher': {belongsTo: 'publisher'}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            'authors': {hasMany: 'author'},
+            'publisher': {belongsTo: 'publisher'}
+          }
+        },
+        {
+          singular: 'publisher',
+          plural: 'publishers',
+          relations: {
+            'authors': {hasMany: 'author'},
+            'books': {hasMany: 'book'}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 'king',
+        books: ['it', 'talisman'],
+        publisher: 'penguin'
+      }).then(function () {
+        return db.rel.save('author', {
+          name: 'Peter Straub',
+          id: 'straub',
+          books: ['ghost', 'talisman'],
+          publisher: 'bantam'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'It',
+          id: 'it',
+          authors: ['king'],
+          publisher: 'penguin'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'The Talisman',
+          id: 'talisman',
+          authors: ['king', 'straub'],
+          publisher: 'penguin'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'Ghost Story',
+          id: 'ghost',
+          authors: ['straub'],
+          publisher: 'bantam'
+        });
+      }).then(function () {
+        return db.rel.save('publisher', {
+          name: 'Bantam',
+          id: 'bantam',
+          authors: ['straub', 'melville'],
+          books: ['moby', 'ghost']
+        });
+      }).then(function () {
+        return db.rel.save('publisher', {
+          title: 'Penguin',
+          id: 'penguin',
+          authors: ['orwell', 'king'],
+          books: ['it', 'talisman', '1984']
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'Moby Dick',
+          id: 'moby',
+          authors: ['melville'],
+          publisher: 'bantam'
+        });
+      }).then(function () {
+        return db.rel.save('author', {
+          name: 'Herman Melville',
+          id: 'melville',
+          books: ['moby'],
+          publisher: 'bantam'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: '1984',
+          id: '1984',
+          authors: ['orwell'],
+          publisher: 'penguin'
+        });
+      }).then(function () {
+        return db.rel.save('author', {
+          name: 'George Orwell',
+          id: 'orwell',
+          books: ['1984'],
+          publisher: 'penguin'
+        });
+      }).then(function () {
+        return db.rel.find('author');
+      }).then(function (res) {
+        ['authors', 'books', 'publishers'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "books": [
+                "it",
+                "talisman"
+              ],
+              "publisher": "penguin",
+              "id": "king"
+            },
+            {
+              "name": "Herman Melville",
+              "books": [
+                "moby"
+              ],
+              "publisher": "bantam",
+              "id": "melville"
+            },
+            {
+              "name": "George Orwell",
+              "books": [
+                "1984"
+              ],
+              "publisher": "penguin",
+              "id": "orwell"
+            },
+            {
+              "name": "Peter Straub",
+              "books": [
+                "ghost",
+                "talisman"
+              ],
+              "publisher": "bantam",
+              "id": "straub"
+            }
+          ],
+          "books": [
+            {
+              "title": "1984",
+              "authors": [
+                "orwell"
+              ],
+              "publisher": "penguin",
+              "id": "1984"
+            },
+            {
+              "title": "Ghost Story",
+              "authors": [
+                "straub"
+              ],
+              "publisher": "bantam",
+              "id": "ghost"
+            },
+            {
+              "title": "It",
+              "authors": [
+                "king"
+              ],
+              "publisher": "penguin",
+              "id": "it"
+            },
+            {
+              "title": "Moby Dick",
+              "authors": [
+                "melville"
+              ],
+              "publisher": "bantam",
+              "id": "moby"
+            },
+            {
+              "title": "The Talisman",
+              "authors": [
+                "king",
+                "straub"
+              ],
+              "publisher": "penguin",
+              "id": "talisman"
+            }
+          ],
+          "publishers": [
+            {
+              "name": "Bantam",
+              "authors": [
+                "straub",
+                "melville"
+              ],
+              "books": [
+                "moby",
+                "ghost"
+              ],
+              "id": "bantam"
+            },
+            {
+              "title": "Penguin",
+              "authors": [
+                "orwell",
+                "king"
+              ],
+              "books": [
+                "it",
+                "talisman",
+                "1984"
+              ],
+              "id": "penguin"
+            }
+          ]
+        });
+      });
+    });
+
     it('does many-to-many with several entities', function () {
       db.setSchema([
         {
@@ -739,83 +962,83 @@ function tests(dbName, dbType) {
         id: 19,
         books: [1, 2]
       }).then(function () {
-        return db.rel.save('author', {
-          name: 'Peter Straub',
-          id: 2,
-          books: [2, 3]
-        });
-      }).then(function () {
-        return db.rel.save('book', {
-          title: 'It',
-          id: 1,
-          authors: [19]
-        });
-      }).then(function () {
-        return db.rel.save('book', {
-          title: 'The Talisman',
-          id: 2,
-          authors: [19, 2]
-        });
-      }).then(function () {
-        return db.rel.save('book', {
-          title: 'Ghost Story',
-          id: 3,
-          authors: [2]
-        });
-      }).then(function () {
-        return db.rel.find('author');
-      }).then(function (res) {
-        ['authors', 'books'].forEach(function (type) {
-          res[type].forEach(function (obj) {
-            obj.rev.should.be.a('string');
-            delete obj.rev;
+          return db.rel.save('author', {
+            name: 'Peter Straub',
+            id: 2,
+            books: [2, 3]
+          });
+        }).then(function () {
+          return db.rel.save('book', {
+            title: 'It',
+            id: 1,
+            authors: [19]
+          });
+        }).then(function () {
+          return db.rel.save('book', {
+            title: 'The Talisman',
+            id: 2,
+            authors: [19, 2]
+          });
+        }).then(function () {
+          return db.rel.save('book', {
+            title: 'Ghost Story',
+            id: 3,
+            authors: [2]
+          });
+        }).then(function () {
+          return db.rel.find('author');
+        }).then(function (res) {
+          ['authors', 'books'].forEach(function (type) {
+            res[type].forEach(function (obj) {
+              obj.rev.should.be.a('string');
+              delete obj.rev;
+            });
+          });
+          res.should.deep.equal({
+            "authors": [
+              {
+                "name": "Peter Straub",
+                "books": [
+                  2,
+                  3
+                ],
+                "id": 2
+              },
+              {
+                "name": "Stephen King",
+                "books": [
+                  1,
+                  2
+                ],
+                "id": 19
+              }
+            ],
+            "books": [
+              {
+                "title": "It",
+                "authors": [
+                  19
+                ],
+                "id": 1
+              },
+              {
+                "title": "The Talisman",
+                "authors": [
+                  19,
+                  2
+                ],
+                "id": 2
+              },
+              {
+                "title": "Ghost Story",
+                "authors": [
+                  2
+                ],
+                "id": 3
+              }
+            ]
           });
         });
-        res.should.deep.equal({
-          "authors": [
-            {
-              "name": "Peter Straub",
-              "books": [
-                2,
-                3
-              ],
-              "id": 2
-            },
-            {
-              "name": "Stephen King",
-              "books": [
-                1,
-                2
-              ],
-              "id": 19
-            }
-          ],
-          "books": [
-            {
-              "title": "It",
-              "authors": [
-                19
-              ],
-              "id": 1
-            },
-            {
-              "title": "The Talisman",
-              "authors": [
-                19,
-                2
-              ],
-              "id": 2
-            },
-            {
-              "title": "Ghost Story",
-              "authors": [
-                2
-              ],
-              "id": 3
-            }
-          ]
-        });
-      });
     });
 
     it('does one-to-many', function () {

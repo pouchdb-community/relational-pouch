@@ -79,6 +79,20 @@ exports.toPromise = function (func) {
   });
 };
 
+// execute some promises in a chain
+exports.series = function (promiseFactories) {
+  var chain = exports.Promise.resolve();
+  var overallRes = new Array(promiseFactories.length);
+  promiseFactories.forEach(function (promiseFactory, i) {
+    chain = chain.then(promiseFactories[i]).then(function (res) {
+      overallRes[i] = res;
+    });
+  });
+  return chain.then(function () {
+    return overallRes;
+  });
+};
+
 exports.inherits = require('inherits');
 exports.Promise = Promise;
 exports.extend = require('pouchdb-extend');
