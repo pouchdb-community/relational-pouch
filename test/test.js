@@ -559,7 +559,6 @@ function tests(dbName, dbType) {
       }).then(function () {
         return db.rel.find('author');
       }).then(function (res) {
-        console.log(JSON.stringify(res));
         res.authors[0].rev.should.be.a('string');
         delete res.authors[0].rev;
 
@@ -673,7 +672,6 @@ function tests(dbName, dbType) {
       }).then(function () {
         return db.rel.find('author');
       }).then(function (res) {
-        console.log(JSON.stringify(res));
         ['authors', 'books'].forEach(function (type) {
           res[type].forEach(function (obj) {
             obj.rev.should.be.a('string');
@@ -767,7 +765,6 @@ function tests(dbName, dbType) {
       }).then(function () {
         return db.rel.find('author');
       }).then(function (res) {
-        console.log(JSON.stringify(res));
         ['authors', 'books'].forEach(function (type) {
           res[type].forEach(function (obj) {
             obj.rev.should.be.a('string');
@@ -979,7 +976,6 @@ function tests(dbName, dbType) {
       }).then(function () {
         return db.rel.find('author');
       }).then(function (res) {
-        console.log(JSON.stringify(res));
         ['authors', 'profiles', 'books'].forEach(function (type) {
           res[type].forEach(function (obj) {
             obj.rev.should.be.a('string');
