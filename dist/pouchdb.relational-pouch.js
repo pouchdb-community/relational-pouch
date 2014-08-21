@@ -81,11 +81,23 @@ var extend = utils.extend;
 var Promise = utils.Promise;
 var collections = require('./collections');
 var uuid = require('./uuid');
+var uniq = require('uniq');
 
 function createError(str) {
   var err = new Error(str);
   err.status = 400;
   return err;
+}
+
+function lexCompare(a, b) {
+  // This always seems to be sorted in the tests,
+  // but I like to be sure.
+  /* istanbul ignore else */
+  if (a.id < b.id) {
+    return -1;
+  } else {
+    return 1;
+  }
 }
 
 var MAX_INT_LENGTH = 16; // max int in JS is 9007199254740992
@@ -301,11 +313,14 @@ exports.setSchema = function (schema) {
                 // else we could get caught in an infinite loop
                 if (foundObjects.has(relatedType) &&
                     foundObjects.get(relatedType).has(JSON.stringify(relatedId))) {
-                  return foundObjects.get(relatedType).get(JSON.stringify(relatedId));
+                  return;
                 }
 
-                // go fetch it
-                return find(relatedType, relatedId, foundObjects);
+                // signal that we need to fetch it
+                return {
+                  relatedType: relatedType,
+                  relatedIds: [relatedId]
+                };
               }));
             }
           } else { // hasMany
@@ -325,9 +340,13 @@ exports.setSchema = function (schema) {
                   return typeof relatedId !== 'undefined';
                 });
 
+                // just return the ids and the types. We'll find them all
+                // in a single bulk operation in order to minimize HTTP requests
                 if (relatedIds.length) {
-                  // are there still any left?
-                  return find(relatedType, relatedIds, foundObjects);
+                  return {
+                    relatedType: relatedType,
+                    relatedIds: relatedIds
+                  };
                 }
               }));
             }
@@ -335,7 +354,24 @@ exports.setSchema = function (schema) {
         });
         return Promise.all(subTasks);
       });
-      return Promise.all(tasks).then(function () {
+      return Promise.all(tasks);
+    }).then(function (listsOfFetchTasks) {
+      // fetch in as few http requests as possible
+      var typesToIds = {};
+      listsOfFetchTasks.forEach(function (fetchTasks) {
+        fetchTasks.forEach(function (fetchTask) {
+          if (!fetchTask) {
+            return;
+          }
+          typesToIds[fetchTask.relatedType] =
+            (typesToIds[fetchTask.relatedType] || []).concat(fetchTask.relatedIds);
+        });
+      });
+
+      return utils.series(Object.keys(typesToIds).map(function (relatedType) {
+        var relatedIds = uniq(typesToIds[relatedType]);
+        return function () {return find(relatedType, relatedIds, foundObjects); };
+      })).then(function () {
         var res = {};
         foundObjects.forEach(function (found, type) {
           var typeInfo = getTypeInfo(type);
@@ -343,9 +379,7 @@ exports.setSchema = function (schema) {
           found.forEach(function (obj) {
             list.push(obj);
           });
-          list.sort(function (a, b) {
-            return a.id < b.id ? -1 : 1;
-          });
+          list.sort(lexCompare);
         });
         return res;
       });
@@ -376,7 +410,7 @@ if (typeof window !== 'undefined' && window.PouchDB) {
   window.PouchDB.plugin(exports);
 }
 
-},{"./../pouch-utils":25,"./collections":1,"./uuid":3}],3:[function(require,module,exports){
+},{"./../pouch-utils":26,"./collections":1,"./uuid":3,"uniq":25}],3:[function(require,module,exports){
 "use strict";
 
 // BEGIN Math.uuid.js
@@ -1113,6 +1147,65 @@ module.exports = extend;
 
 
 },{}],25:[function(require,module,exports){
+"use strict"
+
+function unique_pred(list, compare) {
+  var ptr = 1
+    , len = list.length
+    , a=list[0], b=list[0]
+  for(var i=1; i<len; ++i) {
+    b = a
+    a = list[i]
+    if(compare(a, b)) {
+      if(i === ptr) {
+        ptr++
+        continue
+      }
+      list[ptr++] = a
+    }
+  }
+  list.length = ptr
+  return list
+}
+
+function unique_eq(list) {
+  var ptr = 1
+    , len = list.length
+    , a=list[0], b = list[0]
+  for(var i=1; i<len; ++i, b=a) {
+    b = a
+    a = list[i]
+    if(a !== b) {
+      if(i === ptr) {
+        ptr++
+        continue
+      }
+      list[ptr++] = a
+    }
+  }
+  list.length = ptr
+  return list
+}
+
+function unique(list, compare, sorted) {
+  if(list.length === 0) {
+    return list
+  }
+  if(compare) {
+    if(!sorted) {
+      list.sort(compare)
+    }
+    return unique_pred(list, compare)
+  }
+  if(!sorted) {
+    list.sort()
+  }
+  return unique_eq(list)
+}
+
+module.exports = unique
+
+},{}],26:[function(require,module,exports){
 var process=require("__browserify_process"),global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};'use strict';
 
 var Promise;
@@ -1191,6 +1284,20 @@ exports.toPromise = function (func) {
       return this;
     };
     return promise;
+  });
+};
+
+// execute some promises in a chain
+exports.series = function (promiseFactories) {
+  var chain = exports.Promise.resolve();
+  var overallRes = new Array(promiseFactories.length);
+  promiseFactories.forEach(function (promiseFactory, i) {
+    chain = chain.then(promiseFactories[i]).then(function (res) {
+      overallRes[i] = res;
+    });
+  });
+  return chain.then(function () {
+    return overallRes;
   });
 };
 
