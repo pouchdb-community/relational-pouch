@@ -11,6 +11,8 @@ This plugin also uses clever tricks to avoid creating secondary indexes. This me
 
 The main goal of this is to provide an API that is as similar to [Ember Data](http://emberjs.com/api/data/) and [json:api](http://jsonapi.org/) as possible, while still being performant and Pouch-like.
 
+This plugin is largely what powers [Ember Pouch](https://github.com/nolanlawson/ember-pouch).
+
 Installation
 ------
 
