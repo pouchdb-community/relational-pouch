@@ -177,6 +177,26 @@ function tests(dbName, dbType) {
       });
     });
 
+    it('Removes attachment information on save', function () {
+
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      return db.rel.save('post', {
+        id: 'with_attachment_info',
+        title: "Files are cool",
+        text: "In order to have nice blog posts we need to be able to add files",
+        attachments: {foo: "bar"}
+      }).then(function () {
+        return db.rel.find('post', 'with_attachment_info');
+      }).then(function (res) {
+        var post = res.posts[0];
+        should.not.exist(post.attachments);
+      });
+    });
+
     it('should update blog posts', function () {
 
       db.setSchema([{
