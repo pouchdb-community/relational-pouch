@@ -698,6 +698,22 @@ You will have to deal with conflicts sooner or later. With PouchDB and CouchDB, 
 
 Jan Lenhardt has [a nice writeup](http://writing.jan.io/2013/12/19/understanding-couchdb-conflicts.html) on this.
 
+### Attachments
+
+Thanks to [bterkuile](https://github.com/bterkuile), this plugin also support attachments! Attachments are simply added inline, in the normal PouchDB way, but as
+
+```
+doc.attachments
+```
+
+rather than 
+
+```
+doc._attachments
+```
+
+I.e. It follows the same convention as `doc.id` and `doc.rev`.
+
 How does it work?
 -----
 
