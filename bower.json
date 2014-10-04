@@ -1,11 +1,13 @@
 {
   "name": "relational-pouch",
-  "version": "0.2.2",
+  "version": [
+    "0.3.0"
+  ],
+  "description": "PouchDB, relational-style",
   "homepage": "https://github.com/nolanlawson/relational-pouch",
   "authors": [
     "Nolan Lawson <nolan.lawson@gmail.com>"
   ],
-  "description": "PouchDB, relational-style",
   "main": "dist/pouchdb.relational-pouch.js",
   "moduleType": [
     "node"
