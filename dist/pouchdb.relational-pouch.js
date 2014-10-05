@@ -184,6 +184,10 @@ exports.setSchema = function (schema) {
       delete obj.rev;
     }
 
+    if (obj.attachments) {
+      delete obj.attachments;
+    }
+
     var id = obj.id || uuid();
     delete obj.id;
     doc._id = serialize(typeInfo.singular, id);
@@ -222,6 +226,9 @@ exports.setSchema = function (schema) {
     var obj = pouchDoc.data;
     obj.id = deserialize(pouchDoc._id);
     obj.rev = pouchDoc._rev;
+    if (pouchDoc._attachments) {
+      obj.attachments = pouchDoc._attachments;
+    }
     return obj;
   }
 

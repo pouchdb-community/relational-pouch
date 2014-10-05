@@ -1,6 +1,6 @@
 {
   "name": "relational-pouch",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "PouchDB, relational-style",
   "homepage": "https://github.com/nolanlawson/relational-pouch",
   "authors": [
