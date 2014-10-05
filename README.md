@@ -51,7 +51,7 @@ API
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
 * [`db.rel.del(type, object)`](#dbreldeltype-object)
-* [`db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)`](#dbrelputattachment-object)
+* [`db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)`](#dbrelputattachmenttype-object-attachmentid-attachment-attachmenttype)
 * [Managing relationships](#managing-relationships)
   * [One-to-one](#one-to-one-relationships)
   * [Many-to-one](#many-to-one-relationships)
