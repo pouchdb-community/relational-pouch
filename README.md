@@ -266,6 +266,7 @@ db.rel.get('post', 1).then(function (post) {
 ### db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)
 
 Adds an attachment to the given object. Returns a Promise.
+Note that the result does not yet add the attachment information. Reload might be required.
 
 ```js
 var attachment = new Blob(['Is there life on Mars?']); // new Buffer('Is there life on Mars?') for node
@@ -288,6 +289,7 @@ Result:
 ### db.rel.removeAttachment(type, object, attachmentId)
 
 Adds an attachment to the given object. Returns a Promise.
+Note that the result does not yet remove the attachment information. Reload might be required.
 
 ```js
 var attachment = new Blob(['Is there life on Mars?']); // new Buffer('Is there life on Mars?') for node
@@ -755,7 +757,7 @@ Thanks to [bterkuile](https://github.com/bterkuile), this plugin also support at
 doc.attachments
 ```
 
-rather than 
+rather than
 
 ```
 doc._attachments
