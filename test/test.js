@@ -186,7 +186,6 @@ function tests(dbName, dbType) {
         plural: 'posts'
       }]);
 
-
       return db.rel.save('post', {
         title: 'Rails is Omakase',
         text: 'There are a lot of ala carte blah blah blah',
@@ -565,6 +564,48 @@ function tests(dbName, dbType) {
       });
     });
 
+  });
+
+  describe(dbType + ': doc transformation', function () {
+    it('merges directly into doc when transformation functions require it', function() {
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      db.rel.pouchToDoc = function(pouchDoc) { return pouchDoc; }
+      db.rel.docToPouch = function(doc) { return doc; }
+
+      return db.rel.save('post', {
+        title: "Couch doc is doc without data attribute",
+        text: "We are able to have flat doc structure without storing into the data attribute",
+        id: 'internally_merged'
+      }).then(function (res) {
+        return db.get("post_2_internally_merged");
+      }).then(function (res){
+        delete res._rev;
+        res.should.deep.equal({
+          "_id": "post_2_internally_merged",
+          "title": "Couch doc is doc without data attribute",
+          "text": "We are able to have flat doc structure without storing into the data attribute"
+        });
+      }).then(function(){
+          // Control check for full persitance cycle
+        return db.rel.find('post', 'internally_merged');
+      }).then(function(res) {
+        var post = res.posts[0];
+        delete post.rev;
+        post.should.deep.equal({
+          "id": "internally_merged",
+           "title": "Couch doc is doc without data attribute",
+          "text": "We are able to have flat doc structure without storing into the data attribute"
+        });
+      });
+    });
+
+    it('can use "attributes" as data storage', function() {
+
+    });
   });
 
   describe(dbType + ': invalid relations', function () {
