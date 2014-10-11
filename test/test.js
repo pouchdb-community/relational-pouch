@@ -604,6 +604,49 @@ function tests(dbName, dbType) {
     });
 
     it('can use "attributes" as data storage', function() {
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      db.rel.pouchToDoc = function(pouchDoc, options) {
+        var doc = pouchDoc.attributes;
+        delete doc.ruby_class;
+        // doc.ruby_class = 'mozo::' + options.type;
+        return doc;
+      }
+      db.rel.docToPouch = function(doc, options) {
+        return {attributes: doc, ruby_class: 'mozo::' + options.typeInfo.singular};
+      }
+
+      return db.rel.save('post', {
+        title: "Couch doc is doc without data attribute",
+        text: "We are able to have flat doc structure without storing into the data attribute",
+        id: 'extra_pouch_attribute'
+      }).then(function (res) {
+        return db.get("post_2_extra_pouch_attribute");
+      }).then(function (res){
+        delete res._rev;
+        res.should.deep.equal({
+          "_id": "post_2_extra_pouch_attribute",
+          "attributes": {
+            "title": "Couch doc is doc without data attribute",
+            "text": "We are able to have flat doc structure without storing into the data attribute"
+          },
+          "ruby_class": "mozo::post"
+        });
+      }).then(function(){
+          // Control check for full persitance cycle
+        return db.rel.find('post', 'extra_pouch_attribute');
+      }).then(function(res) {
+        var post = res.posts[0];
+        delete post.rev;
+        post.should.deep.equal({
+          "id": "extra_pouch_attribute",
+           "title": "Couch doc is doc without data attribute",
+          "text": "We are able to have flat doc structure without storing into the data attribute"
+        });
+      });
 
     });
   });
