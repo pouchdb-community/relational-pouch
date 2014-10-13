@@ -52,6 +52,7 @@ API
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
 * [`db.rel.del(type, object)`](#dbreldeltype-object)
 * [`db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)`](#dbrelputattachmenttype-object-attachmentid-attachment-attachmenttype)
+* [`db.rel.getAttachment(type, id, attachmentId)`](#dbrelgetattachmenttype-id-attachmentid)
 * [`db.rel.removeAttachment(type, object, attachmentId)`](#dbrelremoveattachmenttype-object-attachmentid)
 * [Managing relationships](#managing-relationships)
   * [One-to-one](#one-to-one-relationships)
@@ -283,6 +284,17 @@ Result:
     }
   ]
 }
+```
+
+### db.rel.getAttachment(type, id, attachmentId)
+
+Gets an attachment for the given document id. Returns a Promise to a Blob (or Buffer for Node).
+
+```js
+db.rel.getAttachment('post', 1, 'file').then(function (attachment) {
+  // convert the Blob into an object URL and show it in an image tag
+  $('img').attr('src', URL.createObjectURL(attachment));
+});
 ```
 
 ### db.rel.removeAttachment(type, object, attachmentId)
@@ -755,7 +767,7 @@ Thanks to [bterkuile](https://github.com/bterkuile), this plugin also support at
 doc.attachments
 ```
 
-rather than 
+rather than
 
 ```
 doc._attachments
