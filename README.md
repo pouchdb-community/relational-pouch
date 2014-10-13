@@ -51,6 +51,8 @@ API
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
 * [`db.rel.del(type, object)`](#dbreldeltype-object)
+* [`db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)`](#dbrelputattachmenttype-object-attachmentid-attachment-attachmenttype)
+* [`db.rel.removeAttachment(type, object, attachmentId)`](#dbrelremoveattachmenttype-object-attachmentid)
 * [Managing relationships](#managing-relationships)
   * [One-to-one](#one-to-one-relationships)
   * [Many-to-one](#many-to-one-relationships)
@@ -259,6 +261,53 @@ The minimum you need to delete something is an `id` and a `rev`. The easiest pat
 db.rel.get('post', 1).then(function (post) {
   return db.rel.del('post', post);
 });
+```
+
+### db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)
+
+Adds an attachment to the given object. Returns a Promise.
+
+```js
+var attachment = new Blob(['Is there life on Mars?']); // new Buffer('Is there life on Mars?') for node
+db.rel.putAttachment('post', {id:1, rev:"1-0560dbb11ead319c9f5bc1f667ea8e84"}, 'file', attachment, 'text/plain');
+```
+
+Result:
+
+```js
+{
+  "posts": [
+    {
+      "id": 1,
+      "rev": "2-...."
+    }
+  ]
+}
+```
+
+### db.rel.removeAttachment(type, object, attachmentId)
+
+Adds an attachment to the given object. Returns a Promise.
+
+```js
+var attachment = new Blob(['Is there life on Mars?']); // new Buffer('Is there life on Mars?') for node
+db.rel.putAttachment('post', {id:1, rev:"1-0560dbb11ead319c9f5bc1f667ea8e84"}, 'file', attachment, 'text/plain').then(function (res) {
+  var post = res.posts[0];
+  db.rel.removeAttachment('post', post, 'file');
+});
+```
+
+Result:
+
+```js
+{
+  "posts": [
+    {
+      "id": 1,
+      "rev": "3-...."
+    }
+  ]
+}
 ```
 
 ### Managing relationships
@@ -733,7 +782,7 @@ Testing
 This will run the tests in Node using LevelDB:
 
     npm test
-    
+
 You can also check for 100% code coverage using:
 
     npm run coverage
