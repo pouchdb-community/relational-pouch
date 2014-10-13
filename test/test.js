@@ -533,6 +533,32 @@ function tests(dbName, dbType) {
       });
     });
 
+    it('Get attachments through rel.getAttachment', function () {
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      return db.rel.save('post', {
+        title: "Files are cool",
+        text: "In order to have nice blog posts we need to be able to add files",
+        id: 'with_attachment'
+      }).then(function (res) {
+        var attachment;
+        var post = res.posts[0];
+        if (process.browser) {
+          attachment = new Blob(['Is there life on Mars?']);
+        } else {
+          attachment = new Buffer('Is there life on Mars?');
+        }
+        return db.rel.putAttachment('post', post, "file", attachment, 'text/plain');
+      }).then(function () {
+        return db.rel.getAttachment('post', 'with_attachment', 'file');
+      }).then(function (attachment) {
+        attachment.toString('ascii').should.equal('Is there life on Mars?');
+      });
+    });
+
     it('Removes attachments through rel.removeAttachment', function () {
       db.setSchema([{
         singular: 'post',
