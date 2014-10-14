@@ -567,65 +567,65 @@ function tests(dbName, dbType) {
   });
 
   describe(dbType + ': doc transformation', function () {
-    it('merges directly into doc when transformation functions require it', function() {
+    it('merges directly into doc when transformation functions require it', function () {
       db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
 
-      db.rel.pouchToDoc = function(pouchDoc) { return pouchDoc; }
-      db.rel.docToPouch = function(doc) { return doc; }
+      db.rel.pouchToDoc = function (pouchDoc) { return pouchDoc; };
+      db.rel.docToPouch = function (doc) { return doc; };
 
       return db.rel.save('post', {
         title: "Couch doc is doc without data attribute",
         text: "We are able to have flat doc structure without storing into the data attribute",
         id: 'internally_merged'
-      }).then(function (res) {
+      }).then(function () {
         return db.get("post_2_internally_merged");
-      }).then(function (res){
+      }).then(function (res) {
         delete res._rev;
         res.should.deep.equal({
           "_id": "post_2_internally_merged",
           "title": "Couch doc is doc without data attribute",
           "text": "We are able to have flat doc structure without storing into the data attribute"
         });
-      }).then(function(){
+      }).then(function () {
           // Control check for full persitance cycle
         return db.rel.find('post', 'internally_merged');
-      }).then(function(res) {
+      }).then(function (res) {
         var post = res.posts[0];
         delete post.rev;
         post.should.deep.equal({
           "id": "internally_merged",
-           "title": "Couch doc is doc without data attribute",
+          "title": "Couch doc is doc without data attribute",
           "text": "We are able to have flat doc structure without storing into the data attribute"
         });
       });
     });
 
-    it('can use "attributes" as data storage', function() {
+    it('can use "attributes" as data storage', function () {
       db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
 
-      db.rel.pouchToDoc = function(pouchDoc, options) {
+      db.rel.pouchToDoc = function (pouchDoc, options) {
         var doc = pouchDoc.attributes;
-        delete doc.ruby_class;
-        // doc.ruby_class = 'mozo::' + options.type;
+        if (options.typeInfo.singular === "post") { delete doc.ruby_class; }
         return doc;
-      }
-      db.rel.docToPouch = function(doc, options) {
+      };
+
+      db.rel.docToPouch = function (doc, options) {
         return {attributes: doc, ruby_class: 'mozo::' + options.typeInfo.singular};
-      }
+      };
 
       return db.rel.save('post', {
         title: "Couch doc is doc without data attribute",
         text: "We are able to have flat doc structure without storing into the data attribute",
         id: 'extra_pouch_attribute'
-      }).then(function (res) {
+      }).then(function () {
         return db.get("post_2_extra_pouch_attribute");
-      }).then(function (res){
+      }).then(function (res) {
         delete res._rev;
         res.should.deep.equal({
           "_id": "post_2_extra_pouch_attribute",
@@ -635,15 +635,15 @@ function tests(dbName, dbType) {
           },
           "ruby_class": "mozo::post"
         });
-      }).then(function(){
+      }).then(function () {
           // Control check for full persitance cycle
         return db.rel.find('post', 'extra_pouch_attribute');
-      }).then(function(res) {
+      }).then(function (res) {
         var post = res.posts[0];
         delete post.rev;
         post.should.deep.equal({
           "id": "extra_pouch_attribute",
-           "title": "Couch doc is doc without data attribute",
+          "title": "Couch doc is doc without data attribute",
           "text": "We are able to have flat doc structure without storing into the data attribute"
         });
       });
