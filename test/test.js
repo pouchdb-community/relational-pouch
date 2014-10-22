@@ -555,7 +555,24 @@ function tests(dbName, dbType) {
       }).then(function () {
         return db.rel.getAttachment('post', 'with_attachment', 'file');
       }).then(function (attachment) {
-        attachment.toString('ascii').should.equal('Is there life on Mars?');
+        if (process.browser) {
+          var reader = new FileReader();
+          reader.onloadend = function () {
+
+            var binary = "";
+            var bytes = new Uint8Array(this.result || '');
+            var length = bytes.byteLength;
+
+            for (var i = 0; i < length; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+
+            binary.should.equal('Is there life on Mars?');
+          };
+          reader.readAsArrayBuffer(attachment);
+        } else {
+          attachment.toString('ascii').should.equal('Is there life on Mars?');
+        }
       });
     });
 
