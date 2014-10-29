@@ -393,7 +393,42 @@ exports.setSchema = function (schema) {
     });
   }
 
+  function putAttachment(type, obj, attachmentId, attachment, attachmentType) {
+    var dbDocId = serialize(type, obj.id);
+    var typeInfo = getTypeInfo(type);
+    return Promise.resolve().then(function () {
+      return db.putAttachment(dbDocId, attachmentId, obj.rev, attachment, attachmentType);
+    }).then(function (pouchRes) {
+      var res = {};
+      res[typeInfo.plural] = [extend(true, obj, {
+        id: deserialize(pouchRes.id),
+        rev: pouchRes.rev
+      })];
+      return res;
+    });
+  }
+
+  function removeAttachment(type, obj, attachmentId) {
+    var dbDocId = serialize(type, obj.id);
+    var typeInfo = getTypeInfo(type);
+    return Promise.resolve().then(function () {
+      return db.removeAttachment(dbDocId, attachmentId, obj.rev);
+    }).then(function (pouchRes) {
+      var res = {};
+      res[typeInfo.plural] = [extend(true, obj, {
+        id: deserialize(pouchRes.id),
+        rev: pouchRes.rev
+      })];
+      return res;
+    });
+  }
+
   db.rel = {
+    getAttachment: function (type, id, attachmentId, options) {
+      return Promise.resolve().then(function () {
+        return db.getAttachment(serialize(type, id), attachmentId, options);
+      });
+    },
     save: function (type, obj) {
       return Promise.resolve().then(function () {
         return save(type, obj);
@@ -408,7 +443,9 @@ exports.setSchema = function (schema) {
       return Promise.resolve().then(function () {
         return del(type, obj);
       });
-    }
+    },
+    putAttachment: putAttachment,
+    removeAttachment: removeAttachment
   };
 };
 
