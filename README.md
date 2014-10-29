@@ -267,6 +267,7 @@ db.rel.get('post', 1).then(function (post) {
 ### db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)
 
 Adds an attachment to the given object. Returns a Promise.
+Note that the result does not yet add the attachment information. Reload might be required.
 
 ```js
 var attachment = new Blob(['Is there life on Mars?']); // new Buffer('Is there life on Mars?') for node
@@ -300,6 +301,7 @@ db.rel.getAttachment('post', 1, 'file').then(function (attachment) {
 ### db.rel.removeAttachment(type, object, attachmentId)
 
 Adds an attachment to the given object. Returns a Promise.
+Note that the result does not yet remove the attachment information. Reload might be required.
 
 ```js
 var attachment = new Blob(['Is there life on Mars?']); // new Buffer('Is there life on Mars?') for node
@@ -774,6 +776,54 @@ doc._attachments
 ```
 
 I.e. It follows the same convention as `doc.id` and `doc.rev`.
+
+### Document mapping
+
+By default relational-pouch stores attributes as an object in the data attribute of the Pouch/CouchDb database:
+```json
+{
+  "_id": "post_2_unique_id",
+  "_rev": "3-...",
+  "data": {
+    "title": "My blog article title",
+    "other_attributes": "...."
+  }
+}
+```
+
+This is accomplished by the default document mapping defined as (coffeescript):
+
+```coffeescript
+db.rel.pouchToDoc = (pouchDoc) -> pouchDoc.data
+db.rel.docToPouch = (doc) -> data: doc
+```
+
+It is possible to change this behavior to add database attributes and use a different doc structure (coffeescript):
+
+```coffeescript
+db.rel.pouchToDoc = (pouchDoc, options) ->
+  doc = pouchDoc.attributes
+  delete doc.ruby_class
+  doc
+
+db.rel.docToPouch = (doc, options) ->
+  attributes: doc
+  ruby_class: 'mozo::' + options.typeInfo.singular
+```
+
+resulting in a Pouch/CouchDB JSON document stored like:
+
+```json
+{
+  "_id": "post_2_unique_id",
+  "_rev": "3-...",
+  "attributes": {
+    "title": "My blog article title",
+    "other_attributes": "...."
+  },
+  "ruby_class": "mozo::post"
+}
+```
 
 How does it work?
 -----
