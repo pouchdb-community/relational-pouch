@@ -160,7 +160,10 @@ exports.setSchema = function (schema) {
           throw new Error('Invalid relationship definition for: ' + field);
         }
         var relationType = Object.keys(relationDef)[0];
-        var relatedField = relationDef[relationType].type;
+        var relatedField = relationDef[relationType];
+        if (typeof relatedField !== 'string') {
+          relatedField = relatedField.type;
+        }
         if (!keysToSchemas.get(relatedField)) {
           throw new Error('Unknown entity type: ' + relatedField);
         }
@@ -310,10 +313,13 @@ exports.setSchema = function (schema) {
         Object.keys(typeInfo.relations || {}).forEach(function (field) {
           var relationDef = typeInfo.relations[field];
           var relationType = Object.keys(relationDef)[0];
-          var relatedType = relationDef[relationType].type;
-          var relationOptions = relationDef[relationType].options;
-          if (relationOptions && relationOptions.async) {
-            return;
+          var relatedType = relationDef[relationType];
+          if (typeof relatedType !== 'string') {
+            var relationOptions = relatedType.options;
+            if (relationOptions && relationOptions.async) {
+              return;
+            }
+            relatedType = relatedType.type;
           }
           if (relationType === 'belongsTo') {
             var relatedId = obj[field];
