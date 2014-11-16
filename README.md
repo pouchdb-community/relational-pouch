@@ -58,6 +58,7 @@ API
   * [One-to-one](#one-to-one-relationships)
   * [Many-to-one](#many-to-one-relationships)
   * [Many-to-many](#many-to-many-relationships)
+  * [Async relationships](#async-relationships)
   * [Advanced](#advanced)
 * [Managing revisions ("rev")](#managing-revisions-rev)
 
@@ -595,6 +596,97 @@ Result:
   ]
 }
 ```
+
+#### Async relationships
+
+Just like with Ember Data, you can define relationships to be *async*, which means that dependent objects aren't automatically sideloaded. This can reduce your request time and payload size.
+
+For instance, let's say you want to load all authors, but you don't want to load their books, too. You can do:
+
+```js
+db.setSchema([
+  {
+    singular: 'author',
+    plural: 'authors',
+    relations: {
+      books: {hasMany: {type: 'book', options: {async: true}}}
+    }
+  },
+  {
+    singular: 'book',
+    plural: 'books',
+    relations: {
+      author: {belongsTo: {type: 'author', options: {async: true}}}
+    }
+  }
+]);
+```
+
+By default, `async` is consider `false`. So this:
+
+```js
+...
+  books: {hasMany: 'book'}
+...
+```
+
+is equivalent to this:
+
+```js
+...
+  books: {hasMany: {type: 'book', options: {async: false}}}
+...
+```
+
+Now let's try with `{async: true}`. You'll notice that, when we fetch the list of authors, only the book `id`s will be included, not the full books:
+
+```js
+return db.rel.save('author', {
+  name: 'Stephen King',
+  id: 19,
+  books: [1, 2, 3]
+}).then(function () {
+  return db.rel.save('book', {
+    id: 1,
+    title: 'The Gunslinger'
+  });
+}).then(function () {
+  return db.rel.save('book', {
+    id: 2,
+    title: 'The Drawing of the Three'
+  });
+}).then(function () {
+  return db.rel.save('book', {
+    id: 3,
+    title: 'The Wastelands'
+  });
+}).then(function () {
+  return db.rel.find('author');
+});
+```
+
+Result: 
+
+```js
+{
+  "authors": [
+    {
+      "name": "Stephen King",
+      "books": [
+        1,
+        2,
+        3
+      ],
+      "id": 19,
+      "rev": "1-9faf8c4f72db782dacce16a7849d156b"
+    }
+  ]
+}
+```
+
+This can cut down on your request size, if you don't need the full book information when you fetch authors.
+
+Thanks to [Lars-Jørgen Kristiansen](https://github.com/iUtvikler) for implementing this feature!
 
 #### Advanced
 
