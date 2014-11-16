@@ -464,7 +464,7 @@ if (typeof window !== 'undefined' && window.PouchDB) {
   window.PouchDB.plugin(exports);
 }
 
-},{"./../pouch-utils":27,"./collections":1,"./uuid":3,"uniq":26}],3:[function(require,module,exports){
+},{"./../pouch-utils":26,"./collections":1,"./uuid":3,"uniq":25}],3:[function(require,module,exports){
 "use strict";
 
 // BEGIN Math.uuid.js
@@ -645,10 +645,10 @@ var reject = require('./reject');
 var resolve = require('./resolve');
 var INTERNAL = require('./INTERNAL');
 var handlers = require('./handlers');
-module.exports = all;
-function all(iterable) {
+var noArray = reject(new TypeError('must be an array'));
+module.exports = function all(iterable) {
   if (Object.prototype.toString.call(iterable) !== '[object Array]') {
-    return reject(new TypeError('must be an array'));
+    return noArray;
   }
 
   var len = iterable.length;
@@ -681,8 +681,8 @@ function all(iterable) {
       }
     }
   }
-}
-},{"./INTERNAL":7,"./handlers":9,"./promise":11,"./reject":14,"./resolve":15}],9:[function(require,module,exports){
+};
+},{"./INTERNAL":7,"./handlers":9,"./promise":11,"./reject":13,"./resolve":14}],9:[function(require,module,exports){
 'use strict';
 var tryCatch = require('./tryCatch');
 var resolveThenable = require('./resolveThenable');
@@ -728,14 +728,13 @@ function getThen(obj) {
     };
   }
 }
-},{"./resolveThenable":16,"./states":17,"./tryCatch":18}],10:[function(require,module,exports){
+},{"./resolveThenable":15,"./states":16,"./tryCatch":17}],10:[function(require,module,exports){
 module.exports = exports = require('./promise');
 
 exports.resolve = require('./resolve');
 exports.reject = require('./reject');
 exports.all = require('./all');
-exports.race = require('./race');
-},{"./all":8,"./promise":11,"./race":13,"./reject":14,"./resolve":15}],11:[function(require,module,exports){
+},{"./all":8,"./promise":11,"./reject":13,"./resolve":14}],11:[function(require,module,exports){
 'use strict';
 
 var unwrap = require('./unwrap');
@@ -781,7 +780,7 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
   return promise;
 };
 
-},{"./INTERNAL":7,"./queueItem":12,"./resolveThenable":16,"./states":17,"./unwrap":19}],12:[function(require,module,exports){
+},{"./INTERNAL":7,"./queueItem":12,"./resolveThenable":15,"./states":16,"./unwrap":18}],12:[function(require,module,exports){
 'use strict';
 var handlers = require('./handlers');
 var unwrap = require('./unwrap');
@@ -810,48 +809,7 @@ QueueItem.prototype.callRejected = function (value) {
 QueueItem.prototype.otherCallRejected = function (value) {
   unwrap(this.promise, this.onRejected, value);
 };
-},{"./handlers":9,"./unwrap":19}],13:[function(require,module,exports){
-'use strict';
-var Promise = require('./promise');
-var reject = require('./reject');
-var resolve = require('./resolve');
-var INTERNAL = require('./INTERNAL');
-var handlers = require('./handlers');
-module.exports = race;
-function race(iterable) {
-  if (Object.prototype.toString.call(iterable) !== '[object Array]') {
-    return reject(new TypeError('must be an array'));
-  }
-
-  var len = iterable.length;
-  var called = false;
-  if (!len) {
-    return resolve([]);
-  }
-
-  var resolved = 0;
-  var i = -1;
-  var promise = new Promise(INTERNAL);
-  
-  while (++i < len) {
-    resolver(iterable[i]);
-  }
-  return promise;
-  function resolver(value) {
-    resolve(value).then(function (response) {
-      if (!called) {
-        called = true;
-        handlers.resolve(promise, response);
-      }
-    }, function (error) {
-      if (!called) {
-        called = true;
-        handlers.reject(promise, error);
-      }
-    });
-  }
-}
-},{"./INTERNAL":7,"./handlers":9,"./promise":11,"./reject":14,"./resolve":15}],14:[function(require,module,exports){
+},{"./handlers":9,"./unwrap":18}],13:[function(require,module,exports){
 'use strict';
 
 var Promise = require('./promise');
@@ -863,7 +821,7 @@ function reject(reason) {
 	var promise = new Promise(INTERNAL);
 	return handlers.reject(promise, reason);
 }
-},{"./INTERNAL":7,"./handlers":9,"./promise":11}],15:[function(require,module,exports){
+},{"./INTERNAL":7,"./handlers":9,"./promise":11}],14:[function(require,module,exports){
 'use strict';
 
 var Promise = require('./promise');
@@ -898,7 +856,7 @@ function resolve(value) {
       return EMPTYSTRING;
   }
 }
-},{"./INTERNAL":7,"./handlers":9,"./promise":11}],16:[function(require,module,exports){
+},{"./INTERNAL":7,"./handlers":9,"./promise":11}],15:[function(require,module,exports){
 'use strict';
 var handlers = require('./handlers');
 var tryCatch = require('./tryCatch');
@@ -931,13 +889,13 @@ function safelyResolveThenable(self, thenable) {
   }
 }
 exports.safely = safelyResolveThenable;
-},{"./handlers":9,"./tryCatch":18}],17:[function(require,module,exports){
+},{"./handlers":9,"./tryCatch":17}],16:[function(require,module,exports){
 // Lazy man's symbols for states
 
 exports.REJECTED = ['REJECTED'];
 exports.FULFILLED = ['FULFILLED'];
 exports.PENDING = ['PENDING'];
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict';
 
 module.exports = tryCatch;
@@ -953,7 +911,7 @@ function tryCatch(func, value) {
   }
   return out;
 }
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 var immediate = require('immediate');
@@ -975,7 +933,7 @@ function unwrap(promise, func, value) {
     }
   });
 }
-},{"./handlers":9,"immediate":20}],20:[function(require,module,exports){
+},{"./handlers":9,"immediate":19}],19:[function(require,module,exports){
 'use strict';
 var types = [
   require('./nextTick'),
@@ -986,8 +944,7 @@ var types = [
 ];
 var draining;
 var queue = [];
-//named nextTick for less confusing stack traces
-function nextTick() {
+function drainQueue() {
   draining = true;
   var i, oldQueue;
   var len = queue.length;
@@ -1007,7 +964,7 @@ var i = -1;
 var len = types.length;
 while (++ i < len) {
   if (types[i] && types[i].test && types[i].test()) {
-    scheduleDrain = types[i].install(nextTick);
+    scheduleDrain = types[i].install(drainQueue);
     break;
   }
 }
@@ -1017,7 +974,7 @@ function immediate(task) {
     scheduleDrain();
   }
 }
-},{"./messageChannel":21,"./mutation.js":22,"./nextTick":4,"./stateChange":23,"./timeout":24}],21:[function(require,module,exports){
+},{"./messageChannel":20,"./mutation.js":21,"./nextTick":4,"./stateChange":22,"./timeout":23}],20:[function(require,module,exports){
 var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};'use strict';
 
 exports.test = function () {
@@ -1036,7 +993,7 @@ exports.install = function (func) {
     channel.port2.postMessage(0);
   };
 };
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};'use strict';
 //based off rsvp https://github.com/tildeio/rsvp.js
 //license https://github.com/tildeio/rsvp.js/blob/master/LICENSE
@@ -1059,7 +1016,7 @@ exports.install = function (handle) {
     element.data = (called = ++called % 2);
   };
 };
-},{}],23:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};'use strict';
 
 exports.test = function () {
@@ -1084,7 +1041,7 @@ exports.install = function (handle) {
     return handle;
   };
 };
-},{}],24:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 'use strict';
 exports.test = function () {
   return true;
@@ -1095,7 +1052,7 @@ exports.install = function (t) {
     setTimeout(t, 0);
   };
 };
-},{}],25:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
 
 // Extends method
@@ -1167,38 +1124,16 @@ var isArray = Array.isArray || function (obj) {
 };
 
 function extend() {
-  // originally extend() was recursive, but this ended up giving us
-  // "call stack exceeded", so it's been unrolled to use a literal stack
-  // (see https://github.com/pouchdb/pouchdb/issues/2543)
-  var stack = [];
-  var i = -1;
-  var len = arguments.length;
-  var args = new Array(len);
-  while (++i < len) {
-    args[i] = arguments[i];
-  }
-  var container = {};
-  stack.push({args: args, result: {container: container, key: 'key'}});
-  var next;
-  while ((next = stack.pop())) {
-    extendInner(stack, next.args, next.result);
-  }
-  return container.key;
-}
-
-function extendInner(stack, args, result) {
   var options, name, src, copy, copyIsArray, clone,
-    target = args[0] || {},
+    target = arguments[0] || {},
     i = 1,
-    length = args.length,
-    deep = false,
-    numericStringRegex = /\d+/,
-    optionsIsArray;
+    length = arguments.length,
+    deep = false;
 
   // Handle a deep copy situation
   if (typeof target === "boolean") {
     deep = target;
-    target = args[1] || {};
+    target = arguments[1] || {};
     // skip the boolean and the target
     i = 2;
   }
@@ -1217,15 +1152,11 @@ function extendInner(stack, args, result) {
 
   for (; i < length; i++) {
     // Only deal with non-null/undefined values
-    if ((options = args[i]) != null) {
-      optionsIsArray = isArray(options);
+    if ((options = arguments[i]) != null) {
       // Extend the base object
       for (name in options) {
         //if (options.hasOwnProperty(name)) {
         if (!(name in Object.prototype)) {
-          if (optionsIsArray && !numericStringRegex.test(name)) {
-            continue;
-          }
 
           src = target[name];
           copy = options[name];
@@ -1247,13 +1178,7 @@ function extendInner(stack, args, result) {
             }
 
             // Never move original objects, clone them
-            stack.push({
-              args: [deep, clone, copy],
-              result: {
-                container: target,
-                key: name
-              }
-            });
+            target[name] = extend(deep, clone, copy);
 
           // Don't bring in undefined values
           } else if (copy !== undefined) {
@@ -1266,9 +1191,8 @@ function extendInner(stack, args, result) {
     }
   }
 
-  // "Return" the modified object by setting the key
-  // on the given container
-  result.container[result.key] = target;
+  // Return the modified object
+  return target;
 }
 
 
@@ -1276,7 +1200,7 @@ module.exports = extend;
 
 
 
-},{}],26:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 "use strict"
 
 function unique_pred(list, compare) {
@@ -1335,7 +1259,7 @@ function unique(list, compare, sorted) {
 
 module.exports = unique
 
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 var process=require("__browserify_process"),global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};'use strict';
 
 var Promise;
@@ -1435,5 +1359,5 @@ exports.inherits = require('inherits');
 exports.Promise = Promise;
 exports.extend = require('pouchdb-extend');
 
-},{"__browserify_process":5,"inherits":6,"lie":10,"pouchdb-extend":25}]},{},[2])
+},{"__browserify_process":5,"inherits":6,"lie":10,"pouchdb-extend":24}]},{},[2])
 ;

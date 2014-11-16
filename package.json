@@ -1,6 +1,6 @@
 {
   "name": "relational-pouch",
-  "version": "0.4.1",
+  "version": "1.0.0",
   "description": "PouchDB, relational style",
   "main": "lib/index.js",
   "repository": {
