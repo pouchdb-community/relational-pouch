@@ -1632,5 +1632,58 @@ function tests(dbName, dbType) {
         });
       });
     });
+
+    it('fromRawDoc works with changes', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            books: {hasMany: {type: 'books', options: {async: true}}}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            author: {belongsTo: {type: 'author', options: {async: true}}}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 19,
+        books: [1, 2, 3]
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 1,
+          title: 'The Gunslinger'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 2,
+          title: 'The Drawing of the Three'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 3,
+          title: 'The Wastelands'
+        });
+      }).then(function () {
+        return db.changes();
+      }).then(function (changes) {
+        return changes.results.map(function (change) {
+          return db.rel.parseDocID(change.id);
+        });
+      }).then(function (res) {
+        res.should.deep.equal([
+          {"type": "author", "id": 19},
+          {"type": "book", "id": 1},
+          {"type": "book", "id": 2},
+          {"type": "book", "id": 3}
+        ]);
+      });
+    });
   });
 }

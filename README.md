@@ -54,6 +54,7 @@ API
 * [`db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)`](#dbrelputattachmenttype-object-attachmentid-attachment-attachmenttype)
 * [`db.rel.getAttachment(type, id, attachmentId)`](#dbrelgetattachmenttype-id-attachmentid)
 * [`db.rel.removeAttachment(type, object, attachmentId)`](#dbrelremoveattachmenttype-object-attachmentid)
+* [`db.rel.parseDocID(docID)`](#dbrelparsedociddocid)
 * [Managing relationships](#managing-relationships)
   * [One-to-one](#one-to-one-relationships)
   * [Many-to-one](#many-to-one-relationships)
@@ -321,6 +322,45 @@ Result:
     }
   ]
 }
+```
+
+### db.rel.parseDocID(docID)
+
+Parses a raw CouchDB/PouchDB doc `_id` into an object containing a `type` and `id` field. Basically only useful for working with the `db.changes()` feed, so you can tell what changed from a "relational" perspective rather than from the raw CouchDB/PouchDB perspective.
+
+This method is synchronous, so it directly returns the object rather than a Promise.
+
+```js
+db.rel.parseDocID("author_1_0000000000000019");
+```
+
+Returns:
+
+```js
+{
+  "type": "author",
+  "id": 19
+}
+```
+
+So e.g. with `changes()` you could do:
+
+```js
+db.changes().then(function (changes) {
+return changes.results.map(function (change) {
+  return db.rel.parseDocID(change.id);
+});
+```
+
+Result is e.g.:
+
+```js
+[
+  {"type": "author", "id": 19},
+  {"type": "book", "id": 1},
+  {"type": "book", "id": 2},
+  {"type": "book", "id": 3}
+]
 ```
 
 ### Managing relationships
