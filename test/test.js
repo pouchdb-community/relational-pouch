@@ -472,7 +472,7 @@ function tests(dbName, dbType) {
       }).then(function (res) {
         var attachment;
         if (process.browser) {
-          attachment = new Blob(['Is there life on Mars?']);
+          attachment = blobUtil.createBlob(['Is there life on Mars?']);
         } else {
           attachment = new Buffer('Is there life on Mars?');
         }
@@ -519,7 +519,7 @@ function tests(dbName, dbType) {
         var attachment;
         var post = res.posts[0];
         if (process.browser) {
-          attachment = new Blob(['Is there life on Mars?']);
+          attachment = blobUtil.createBlob(['Is there life on Mars?']);
         } else {
           attachment = new Buffer('Is there life on Mars?');
         }
@@ -547,7 +547,7 @@ function tests(dbName, dbType) {
         var attachment;
         var post = res.posts[0];
         if (process.browser) {
-          attachment = new Blob(['Is there life on Mars?']);
+          attachment = blobUtil.createBlob(['Is there life on Mars?']);
         } else {
           attachment = new Buffer('Is there life on Mars?');
         }
@@ -590,7 +590,7 @@ function tests(dbName, dbType) {
         var attachment;
         var post = res.posts[0];
         if (process.browser) {
-          attachment = new Blob(['Is there life on Mars?']);
+          attachment = blobUtil.createBlob(['Is there life on Mars?']);
         } else {
           attachment = new Buffer('Is there life on Mars?');
         }

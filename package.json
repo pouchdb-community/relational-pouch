@@ -40,6 +40,7 @@
     "uniq": "^1.0.1"
   },
   "devDependencies": {
+    "blob-util": "^1.1.0",
     "bluebird": "^1.0.7",
     "browserify": "~2.36.0",
     "chai": "~1.8.1",
