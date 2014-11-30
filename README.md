@@ -261,7 +261,7 @@ Result:
 The minimum you need to delete something is an `id` and a `rev`. The easiest pattern is to just `find` it before deleting it:
 
 ```js
-db.rel.get('post', 1).then(function (post) {
+db.rel.find('post', 1).then(function (post) {
   return db.rel.del('post', post);
 });
 ```
@@ -858,7 +858,7 @@ The plugin is not smart enough to infer bidirectional relationships, so you have
 When you update an existing object, you'll need to include the `rev`, or else you'll get a 409 conflict error. This is standard CouchDB/PouchDB behavior, so the common idiom is:
 
 ```js
-db.rel.get('post', 1).then(function (post) {
+db.rel.find('post', 1).then(function (post) {
   // do whatever you want to do to update the post
   return db.rel.save('post', post).catch(function (err) {
     if (err.code === 409) { // conflict
@@ -874,7 +874,7 @@ db.rel.get('post', 1).then(function (post) {
 This also applies to deletions:
 
 ```js
-db.rel.get('post', 1).then(function (post) {
+db.rel.find('post', 1).then(function (post) {
   return db.rel.del('post', post).catch(function (err) {
     if (err.code === 409) { // conflict
       // handle the conflict
