@@ -469,6 +469,10 @@ exports.setSchema = function (schema) {
     };
   }
 
+  function makeDocID(obj) {
+    return serialize(obj.type, obj.id);
+  }
+
   db.rel = {
     save: save,
     find: find,
@@ -476,7 +480,8 @@ exports.setSchema = function (schema) {
     getAttachment: getAttachment,
     putAttachment: putAttachment,
     removeAttachment: removeAttachment,
-    parseDocID: parseDocID
+    parseDocID: parseDocID,
+    makeDocID: makeDocID
   };
 };
 
