@@ -218,7 +218,7 @@ Result:
 Find multiple objects with multiple `id`s. Returns a Promise.
 
 ```js
-db.rel.find('post', [1, 2, 3]);
+db.rel.find('post', [3, 2, 1]);
 ```
 
 Result:
@@ -227,16 +227,16 @@ Result:
 {
   "posts": [
     {
-      "title": "Maybe Rails is more like a sushi buffet",
-      "text": "Heresy!",
-      "id": 2,
-      "rev": "1-6d8ac6d86d01b91cfbe2f53e0c81bb86"
-    },
-    {
       "title": "Rails is Unagi",
       "text": "Delicious unagi. Mmmmmm.",
       "id": 1,
       "rev": "1-0ae315ee597b22cc4b1acf9e0edc35ba"
+    },  
+    {
+      "title": "Maybe Rails is more like a sushi buffet",
+      "text": "Heresy!",
+      "id": 2,
+      "rev": "1-6d8ac6d86d01b91cfbe2f53e0c81bb86"
     }
   ]
 }
@@ -244,7 +244,7 @@ Result:
 
 If an `id` isn't found, it's simply not returned. Notice that above, there is no object with an `id` of `3`. 
 
-`find` results are returned unordered. The order of your `ids` array will not necessarily be reflected in the returned array of objects.
+`find` results are always returned ordered by id. The order of your `ids` array will not necessarily be reflected in the returned array of objects.
 
 ### db.rel.del(type, object)
 
