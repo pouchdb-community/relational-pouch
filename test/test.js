@@ -58,6 +58,19 @@ function tests(dbName, dbType) {
       });
     });
 
+    it('makeDocID and parseDocID produce symmetrical return vals', function () {
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var initialId = 'post_2_abc123';
+      var parsedId = db.rel.parseDocID(initialId);
+      var currentId = db.rel.makeDocID(parsedId);
+
+      currentId.should.equal(initialId);
+    });
+
     it('should store blog posts', function () {
 
       db.setSchema([{

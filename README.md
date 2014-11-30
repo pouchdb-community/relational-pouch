@@ -363,6 +363,33 @@ Result is e.g.:
 ]
 ```
 
+### db.rel.makeDocID(parsedID)
+
+Creates a valid `_id` from an object with `type` and `id` properties, such as
+`parseDocID` generates.
+
+```js
+db.rel.makeDocID({ "type": "author", "id": 19 });
+```
+
+Returns:
+
+```js
+"author_1_0000000000000019"
+```
+
+Useful if you need to perform operations with the underlying database, e.g.:
+
+```js
+var _id = db.rel.makeDocID({ "type": "author", "id": 19 });
+db.get(_id).then(function (doc) {
+  var parsedId = db.parseDocID(doc._id);
+  doc.data.type = parsedId.type;
+  doc.data.id = parsedId.id;
+  return doc.data;
+});
+```
+
 ### Managing relationships
 
 Entity relationships are encoded using the [Ember Data Model](http://andycrum.github.io/ember-data-model-maker/) format, which is a slight simplification of [json:api](http://jsonapi.org/).
@@ -705,7 +732,7 @@ return db.rel.save('author', {
 });
 ```
 
-Result: 
+Result:
 
 ```js
 {
