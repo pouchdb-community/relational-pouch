@@ -55,6 +55,7 @@ API
 * [`db.rel.getAttachment(type, id, attachmentId)`](#dbrelgetattachmenttype-id-attachmentid)
 * [`db.rel.removeAttachment(type, object, attachmentId)`](#dbrelremoveattachmenttype-object-attachmentid)
 * [`db.rel.parseDocID(docID)`](#dbrelparsedociddocid)
+* [`db.rel.makeDocID(docID)`](#dbrelmakedociddocid)
 * [Managing relationships](#managing-relationships)
   * [One-to-one](#one-to-one-relationships)
   * [Many-to-one](#many-to-one-relationships)
