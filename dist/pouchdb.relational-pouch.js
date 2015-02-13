@@ -148,6 +148,11 @@ exports.setSchema = function (schema) {
     keysToSchemas.set(type.plural, type);
   });
 
+  // set default documentType
+  schema.forEach(function (type) {
+    type.documentType = type.documentType || type.singular;
+  });
+
   // validate the relations
   schema.forEach(function (type) {
     if (type.relations) {
@@ -192,7 +197,7 @@ exports.setSchema = function (schema) {
 
     var id = obj.id || uuid();
     delete obj.id;
-    doc._id = serialize(typeInfo.singular, id);
+    doc._id = serialize(typeInfo.documentType, id);
 
     if (typeInfo.relations) {
       Object.keys(typeInfo.relations).forEach(function (field) {
@@ -286,16 +291,16 @@ exports.setSchema = function (schema) {
 
     if (typeof idOrIds === 'undefined' || idOrIds === null) {
       // find everything
-      opts.startkey = serialize(typeInfo.singular);
-      opts.endkey = serialize(typeInfo.singular, {});
+      opts.startkey = serialize(typeInfo.documentType);
+      opts.endkey = serialize(typeInfo.documentType, {});
     } else if (Array.isArray(idOrIds)) {
       // find multiple by ids
       opts.keys = idOrIds.map(function (id) {
-        return serialize(typeInfo.singular, id);
+        return serialize(typeInfo.documentType, id);
       });
     } else {
     // find by single id
-      opts.key = serialize(typeInfo.singular, idOrIds);
+      opts.key = serialize(typeInfo.documentType, idOrIds);
     }
 
     if (!foundObjects.has(type)) {
@@ -463,6 +468,16 @@ exports.setSchema = function (schema) {
     var idx = str.indexOf('_');
     var type = str.substring(0, idx);
     var relId = deserialize(str);
+
+    var defaultType = keysToSchemas.get(type);
+    if (!defaultType) {
+      var matchingSchemaTypes = schema.filter(
+        function (schemaType) { return schemaType.documentType === type; });
+      if (matchingSchemaTypes.length > 0) {
+        type = matchingSchemaTypes[0].singular;
+      }
+    }
+
     return {
       type: type,
       id: relId
@@ -470,7 +485,14 @@ exports.setSchema = function (schema) {
   }
 
   function makeDocID(obj) {
-    return serialize(obj.type, obj.id);
+    var type = obj.type;
+
+    var typeInfo = keysToSchemas.get(type);
+    if (typeInfo) {
+      type = typeInfo.documentType;
+    }
+
+    return serialize(type, obj.id);
   }
 
   db.rel = {
@@ -776,7 +798,7 @@ function Promise(resolver) {
     return new Promise(resolver);
   }
   if (typeof resolver !== 'function') {
-    throw new TypeError('reslover must be a function');
+    throw new TypeError('resolver must be a function');
   }
   this.state = states.PENDING;
   this.queue = [];
