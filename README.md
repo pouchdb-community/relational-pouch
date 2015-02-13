@@ -105,6 +105,33 @@ You need to explicitly define the singular and plural forms of your entities, be
 
 Once you call `setSchema`, your `db` will be blessed with a `rel` object, which is where you can start using the rest of this plugin's API.
 
+#### documentType
+
+Rarely, you might want to have two different views over the same underlying data. Use `documentType` to create a view which reads the same data as another type:
+
+```js
+var db = new PouchDB('mydb');
+db.setSchema([
+  {
+    singular: 'post',
+    plural: 'posts',
+    relations: {
+      author: {belongsTo: 'author'},
+      comments: {hasMany: 'comment'}
+    }
+  },
+  {
+    singular: 'postSummary',
+    plural: 'postSummaries',
+    documentType: 'post'
+  }
+]);
+```
+
+Here, when you load a "postSummary", it will return the same core record as "post", but will not resolve the relationships.
+
+Be careful when using this feature — it is probably best to treat a type declaring a documentType as read-only. Do all creates/updates via the main type.
+
 ### db.rel.save(type, object)
 
 Save an object with a particular type. This returns a Promise.

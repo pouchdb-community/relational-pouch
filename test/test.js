@@ -424,6 +424,92 @@ function tests(dbName, dbType) {
       });
     });
 
+    it('should find using a documentType if provided', function () {
+      db.setSchema([
+        {
+          singular: 'postSummary',
+          plural: 'postSummaries',
+          documentType: 'post'
+        }
+      ]);
+
+      return db.put({ data: { text: 'Oh no' } }, 'post_2_oh').then(function () {
+        return db.rel.find('postSummary', 'oh');
+      }).then(function (res) {
+        delete res.postSummaries[0].rev;
+        res.should.deep.equal({ postSummaries: [{
+          id: 'oh',
+          text: 'Oh no'
+        }] });
+      });
+    });
+
+    it('should save using a documentType if provided', function () {
+      db.setSchema([
+        {
+          singular: 'postSummary',
+          plural: 'postSummary',
+          documentType: 'post'
+        }
+      ]);
+
+      return db.rel.save('postSummary', { title: 'Hey', id: 'hello' }).then(function () {
+        return db.get('post_2_hello');
+      }).then(function (res) {
+        delete res._rev;
+        res.should.deep.equal({
+          _id: 'post_2_hello',
+          data: {
+            title: 'Hey'
+          }
+        });
+      });
+    });
+
+    it('should use the documentType for makeDocID', function () {
+      db.setSchema([
+        {
+          singular: 'post',
+          plural: 'posts'
+        },
+        {
+          singular: 'postSummary',
+          plural: 'postSummaries',
+          documentType: 'post'
+        }
+      ]);
+
+      db.rel.makeDocID({ type: 'postSummary', id: 'foo' }).should.equal('post_2_foo');
+    });
+
+    it('should use the default documentType for parseDocID, if present', function () {
+      db.setSchema([
+        {
+          singular: 'post',
+          plural: 'posts'
+        },
+        {
+          singular: 'postSummary',
+          plural: 'postSummaries',
+          documentType: 'post'
+        }
+      ]);
+
+      db.rel.parseDocID('post_2_bar').should.deep.equal({ type: 'post', id: 'bar' });
+    });
+
+    it('should use a type with a matching documentType for parseDocID, if no default', function () {
+      db.setSchema([
+        {
+          singular: 'postSummary',
+          plural: 'postSummaries',
+          documentType: 'post'
+        }
+      ]);
+
+      db.rel.parseDocID('post_2_bar').should.deep.equal({ type: 'postSummary', id: 'bar' });
+    });
+
     it('can delete', function () {
 
       db.setSchema([
