@@ -71,6 +71,18 @@ function tests(dbName, dbType) {
       currentId.should.equal(initialId);
     });
 
+    it('allows makeDocID for an unknown type', function () {
+      db.setSchema([]);
+
+      db.rel.makeDocID({ type: 'something', id: 'quux' }).should.equal('something_2_quux');
+    });
+
+    it('allows parseDocID for an unknown type', function () {
+      db.setSchema([]);
+
+      db.rel.parseDocID('something_2_bar').should.deep.equal({ type: 'something', id: 'bar' });
+    });
+
     it('should store blog posts', function () {
 
       db.setSchema([{
