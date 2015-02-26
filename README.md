@@ -969,11 +969,11 @@ How does it work?
 
 A relational Pouch/Couch is just a regular database that has been partitioned by type.
 
-So for instance, a document with type "pokemon" and id "1" might have an actual `_id` like "pokemon_1", whereas a "trainer" with id "2" might have an actual `_id` like "trainer_2". It's not rocket science.
+So for instance, a document with type `"pokemon"` and id `"1"` might have an actual `_id` like `"pokemon_1"`, whereas a `"trainer"` with id `"2"` might have an actual `_id` like `"trainer_2"`. It's not rocket science.
 
-What is important is that this plugin leverages the very efficient `allDocs()` API, rather than relying on the performance-killing `query()` API. Also, it joins related documents by simply making extra requests, rather than using native map/reduce joined documents.
+What is important is that this plugin leverages the very efficient `allDocs()` API, rather than the slower `query()` API. Also, it joins related documents by simply making extra requests, rather than using native map/reduce joined documents. And it's smart enough to group the requests, so the data is fetched in the fewest posisble number of requests.
 
-Although this method may seem naïve, in practice you get much better performance, because secondary indexes in Pouch/Couch are just plain slow. (I wrote most of Pouch's secondary index logic, so I ought to know.)
+Although this method may seem naïve, in practice you get much better performance, because building secondary indexes in Pouch/Couch takes quite a bit of time. Whereas if you just use `allDocs()`, it uses the built-in index on `_id`, so you don't have to wait for an index to be built.
 
 Testing
 ----
