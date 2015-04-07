@@ -241,7 +241,6 @@ exports.setSchema = function (schema) {
     }
     return obj;
   }
-
   function getTypeInfo(type) {
     if (!keysToSchemas.has(type)) {
       throw createError('unknown type: ' + JSON.stringify(type));
@@ -264,6 +263,39 @@ exports.setSchema = function (schema) {
       })];
       return res;
     });
+  }
+
+
+  /**
+   * SaveAll PouchDB docs from a Json.
+   */
+
+  function _saveAll(type, json) {
+    var typeInfo = getTypeInfo(type);
+    if (Array.isArray(json)){
+      return Promise.resolve().then(function () {
+        var pouchDocs = json.map(function(obj){
+          return toRawDoc(typeInfo, obj);
+        });
+        return db.bulkDocs(pouchDocs).then(function (result) {
+          console.debug("load ok", result);
+          return result;
+        }).catch(function (err) {
+          console.error(err);
+        });
+      }).then(function (pouchResults) {
+
+        return pouchResults.map(function(pouchRes){
+          var res = {};
+          res[typeInfo.plural] = [extend(true, obj, {
+            id: deserialize(pouchRes.id),
+            rev: pouchRes.rev
+          })];
+          return res;
+        })
+
+      });
+    }
   }
 
   function _del(type, obj) {
@@ -449,6 +481,12 @@ exports.setSchema = function (schema) {
   function save(type, obj) {
     return Promise.resolve().then(function () {
       return _save(type, obj);
+    });
+  }
+
+  function saveAll(type, json) {
+    return Promise.resolve().then(function () {
+      return _saveAll(type, json);
     });
   }
 
