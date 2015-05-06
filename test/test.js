@@ -596,23 +596,30 @@ function tests(dbName, dbType) {
       });
     });
 
-    it('Removes attachment information on save', function () {
-
+    it('Does not remove attachment information on save', function () {
       db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
+      
+      var attachment;
+      if (process.browser) {
+        attachment = blobUtil.createBlob(['Is there life on Mars?']);
+      } else {
+        attachment = new Buffer('Is there life on Mars?');
+      }
 
       return db.rel.save('post', {
         id: 'with_attachment_info',
         title: "Files are cool",
         text: "In order to have nice blog posts we need to be able to add files",
-        attachments: {foo: "bar"}
+        attachments: {foo: attachment}
       }).then(function () {
         return db.rel.find('post', 'with_attachment_info');
       }).then(function (res) {
         var post = res.posts[0];
-        should.not.exist(post.attachments);
+        should.exist(post.attachments);
+        should.exist(post.attachments.foo);
       });
     });
 
