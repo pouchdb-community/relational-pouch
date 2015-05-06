@@ -613,7 +613,12 @@ function tests(dbName, dbType) {
         id: 'with_attachment_info',
         title: "Files are cool",
         text: "In order to have nice blog posts we need to be able to add files",
-        attachments: {foo: attachment}
+        attachments: {
+          foo: {
+            content_type: 'text/plain',
+            data: attachment
+          }
+        }
       }).then(function () {
         return db.rel.find('post', 'with_attachment_info');
       }).then(function (res) {
