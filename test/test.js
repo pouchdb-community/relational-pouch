@@ -596,7 +596,7 @@ function tests(dbName, dbType) {
       });
     });
 
-    it('Does not remove attachment information on save', function () {
+    it('When saving the new document, saves the attachment', function () {
       db.setSchema([{
         singular: 'post',
         plural: 'posts'
@@ -625,6 +625,86 @@ function tests(dbName, dbType) {
         var post = res.posts[0];
         should.exist(post.attachments);
         should.exist(post.attachments.foo);
+        post.attachments.foo.content_type.should.equal('text/plain');
+      });
+    });
+    
+    it('When updating the existing document, keeps the attachment', function () {
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var attachment;
+      if (process.browser) {
+        attachment = blobUtil.createBlob(['Is there life on Mars?']);
+      } else {
+        attachment = new Buffer('Is there life on Mars?');
+      }
+
+      return db.rel.save('post', {
+        id: 'with_attachment_info',
+        title: "Files are cool",
+        text: "In order to have nice blog posts we need to be able to add files",
+        attachments: {
+          foo: {
+            content_type: 'text/plain',
+            data: attachment
+          }
+        }
+      }).then(function () {
+        return db.rel.find('post', 'with_attachment_info');
+      }).then(function (res) {
+        // Update the post
+        var post = res.posts[0];
+        post.title = "Files are VERY cool";
+        return db.rel.save('post', post);
+      }).then(function () {
+        // Reload the post
+        return db.rel.find('post', 'with_attachment_info');
+      }).then(function (res) {
+        var post = res.posts[0];
+        should.exist(post.attachments);
+        should.exist(post.attachments.foo);
+        post.attachments.foo.content_type.should.equal('text/plain');
+      });
+    });
+    
+    it('Removes the attachment through removal of attachments field', function () {
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var attachment;
+      if (process.browser) {
+        attachment = blobUtil.createBlob(['Is there life on Mars?']);
+      } else {
+        attachment = new Buffer('Is there life on Mars?');
+      }
+
+      return db.rel.save('post', {
+        id: 'with_attachment_info',
+        title: "Files are cool",
+        text: "In order to have nice blog posts we need to be able to add files",
+        attachments: {
+          foo: {
+            content_type: 'text/plain',
+            data: attachment
+          }
+        }
+      }).then(function () {
+        return db.rel.find('post', 'with_attachment_info');
+      }).then(function (res) {
+        // Update the post
+        var post = res.posts[0];
+        delete post.attachments;
+        return db.rel.save('post', post);
+      }).then(function () {
+        return db.rel.find('post', 'with_attachment_info');
+      }).then(function (res) {
+        var post = res.posts[0];
+        should.not.exist(post.attachments);
       });
     });
 
