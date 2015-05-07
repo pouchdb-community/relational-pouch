@@ -192,6 +192,7 @@ exports.setSchema = function (schema) {
     }
 
     if (obj.attachments) {
+      doc._attachments = obj.attachments;
       delete obj.attachments;
     }
 
