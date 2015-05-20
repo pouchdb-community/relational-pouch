@@ -46,7 +46,7 @@ API
 ### Summary
 
 * [`db.setSchema(schema)`](#dbsetschemaschema)
-* [`db.rel.save(type, object)`](#dbrelsavetype-object)
+* [`db.rel.save(type, object, isDel)`](#dbrelsavetype-object)
 * [`db.rel.saveAll(type, json)`](#dbrelsavealltype-json)
 * [`db.rel.find(type)`](#dbrelfindtype)
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
@@ -133,7 +133,7 @@ Here, when you load a "postSummary", it will return the same core record as "pos
 
 Be careful when using this feature — it is probably best to treat a type declaring a documentType as read-only. Do all creates/updates via the main type.
 
-### db.rel.save(type, object)
+### db.rel.save(type, object, isdel)
 
 Save an object with a particular type. This returns a Promise.
 
@@ -141,7 +141,7 @@ Save an object with a particular type. This returns a Promise.
 db.rel.save('post', {
   title: 'Rails is Omakase',
   text: 'There are a lot of a-la-carte software...'
-});
+}, false);
 ```
 
 Result:
@@ -188,6 +188,10 @@ You'll notice the special field `rev`, which is a revision identifier. That'll c
 
 `id` and `rev` are reserved fields when you use this plugin. You shouldn't try to use them for something else. An `id` can be any string or integer.
 
+
+
+if you set the 'isDel' to true, then the function will save the object with  _deleted =  true. Which is the same as a delete.
+This way you could implement your conflicts management with the same function.
 
 ### db.rel.saveAll(type, json)
 
