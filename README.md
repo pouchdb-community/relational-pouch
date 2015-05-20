@@ -47,7 +47,7 @@ API
 
 * [`db.setSchema(schema)`](#dbsetschemaschema)
 * [`db.rel.save(type, object)`](#dbrelsavetype-object)
-* [`db.rel.saveAll(type, json)`](#dbrelsavealltype-object)
+* [`db.rel.saveAll(type, json)`](#dbrelsavealltype-json)
 * [`db.rel.find(type)`](#dbrelfindtype)
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
