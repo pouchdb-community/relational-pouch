@@ -1,0 +1,20 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <option name="myLocal" value="true" />
+    <inspection_tool class="HtmlNonExistentInternetResource" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="QuirksModeInspectionTool" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="IE50" value="false" />
+      <option name="IE55" value="false" />
+      <option name="IE6" value="true" />
+      <option name="IE7" value="true" />
+      <option name="IE_MAC" value="false" />
+      <option name="MOZILLA" value="true" />
+      <option name="OPERA7" value="false" />
+      <option name="OPERA8" value="false" />
+      <option name="OPERA85" value="true" />
+      <option name="OPERA9" value="true" />
+      <option name="SAFARI" value="true" />
+    </inspection_tool>
+  </profile>
+</component>
