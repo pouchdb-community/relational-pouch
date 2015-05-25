@@ -39,7 +39,7 @@ function tests(dbName, dbType) {
     return db;
   });
   afterEach(function () {
-    return Pouch.destroy(dbName);
+    return db.destroy();
   });
 
   describe(dbType + ': basic tests', function () {
