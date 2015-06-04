@@ -298,7 +298,7 @@ db.rel.find('post', 1).then(function (post) {
 
 ### db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)
 
-Adds an attachment to the given object. Returns a Promise.
+Adds an attachment to the given object. Returns a Promise. See [PouchDB Attachments](http://pouchdb.com/guides/attachments.html) but note that ._attachments is instead .attachments in relational-pouch.
 
 ```js
 var attachment = new Blob(['Is there life on Mars?']); // new Buffer('Is there life on Mars?') for node
@@ -311,6 +311,14 @@ Result:
 {
   "posts": [
     {
+      "attachments": {
+        "file": {
+          "content_type": "text/plain",
+          "digest": "md5-1cz9JKh0i+1OLJonmitgiQ==",
+          "length": 22,
+          // ... http://pouchdb.com/guides/attachments.html
+        }
+      },
       "id": 1,
       "rev": "2-...."
     }
@@ -331,7 +339,7 @@ db.rel.getAttachment('post', 1, 'file').then(function (attachment) {
 
 ### db.rel.removeAttachment(type, object, attachmentId)
 
-Adds an attachment to the given object. Returns a Promise.
+Remove an attachment from the given object. Returns a Promise.
 
 ```js
 var attachment = new Blob(['Is there life on Mars?']); // new Buffer('Is there life on Mars?') for node
@@ -339,6 +347,12 @@ db.rel.putAttachment('post', {id:1, rev:"1-0560dbb11ead319c9f5bc1f667ea8e84"}, '
   var post = res.posts[0];
   db.rel.removeAttachment('post', post, 'file');
 });
+```
+
+or continuing from the addAttachment example
+
+```js
+db.rel.removeAttachment('post', {id: 1, rev:"2-09d5c5bd86fc170c064b296773044ea9"} , 'file');
 ```
 
 Result:
