@@ -930,9 +930,9 @@ The plugin is not smart enough to infer bidirectional relationships, so you have
 When you update an existing object, you'll need to include the `rev`, or else you'll get a 409 conflict error. This is standard CouchDB/PouchDB behavior, so the common idiom is:
 
 ```js
-db.rel.find('post', 1).then(function (post) {
+db.rel.find('post', 1).then(function (res) {
   // do whatever you want to do to update the post
-  return db.rel.save('post', post).catch(function (err) {
+  return db.rel.save('post', res.posts[0]).catch(function (err) {
     if (err.code === 409) { // conflict
       // handle the conflict somehow. e.g. ask the user to compare the two versions,
       // or just try the whole thing again
@@ -946,8 +946,8 @@ db.rel.find('post', 1).then(function (post) {
 This also applies to deletions:
 
 ```js
-db.rel.find('post', 1).then(function (post) {
-  return db.rel.del('post', post).catch(function (err) {
+db.rel.find('post', 1).then(function (res) {
+  return db.rel.del('post', res.posts[0]).catch(function (err) {
     if (err.code === 409) { // conflict
       // handle the conflict
     } else {
