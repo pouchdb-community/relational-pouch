@@ -3,6 +3,24 @@ Relational Pouch
 
 [![Build Status](https://travis-ci.org/nolanlawson/relational-pouch.svg)](https://travis-ci.org/nolanlawson/relational-pouch)
 
+```js
+var db = new PouchDB('mydb');
+db.setSchema([
+  {singular: 'author', plural: 'authors', relations: { books: {hasMany: 'book'}}},
+  {singular: 'book', plural: 'books', relations: {author: {belongsTo: 'author'}}}
+]);
+db.rel.save('author', {
+  name: 'George R. R. Martin', id: 1, books: [6, 7]
+}).then(function () {
+  return db.rel.save('book', { title: 'A Game of Thrones', id: 6, author: 1});
+}).then(function () {
+  return db.rel.save('book', {title: 'The Hedge Knight', id: 7, author: 1});
+}).catch(console.log.bind(console));
+```
+
+Description
+---
+
 Relational Pouch is a plugin for PouchDB that allows you to interact with PouchDB/CouchDB as if it was a relational data store.
 
 It provides an enhanced API on top of PouchDB that is probably more familiar to fans of relational databases, and maybe even easier to use. At the same time, though, you still have CouchDB's awesome indexing and sync capabilities.
