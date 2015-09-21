@@ -293,7 +293,7 @@ If an `id` isn't found, it's simply not returned. Notice that above, there is no
 Find all objects with a given type and specified options as defined for [PouchDB batch fetch](http://pouchdb.com/api.html#batch_fetch). Returns a Promise.
 
 ```js
-db.rel.find('post', null, {startkey:1, limit:2});
+db.rel.find('post', null, {startkey: db.rel.makeDocID({type: 'post', id: 1}), limit: 2});
 ```
 
 Result:
@@ -316,7 +316,7 @@ Result:
   ]
 }
 ```
-The `include_docs`, `conflicts` and `attachments` options are not supported.
+The `include_docs`, `conflicts`, and `attachments` options are not supported.
 
 ### db.rel.del(type, object)
 

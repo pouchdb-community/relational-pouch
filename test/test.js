@@ -1888,5 +1888,122 @@ function tests(dbName, dbType) {
         ]);
       });
     });
+    
+    it('should pass along options', function () {
+
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+
+      return db.rel.save('post', {
+        title: 'Rails is Omakase',
+        text: 'There are a lot of ala carte blah blah blah',
+        id: 1
+      }).then(function () {
+        return db.rel.save('post', {
+          title: 'Rails is Unagi',
+          text: 'Declicious unagi',
+          id: 2
+        });
+      }).then(function () {
+        return db.rel.find('post', null, {limit: 1});
+      }).then(function (res) {
+        res.posts.forEach(function (post) {
+          post.rev.should.be.a('string');
+          delete post.rev;
+        });
+        res.should.deep.equal({
+          posts: [
+            {
+              title: 'Rails is Omakase',
+              text: 'There are a lot of ala carte blah blah blah',
+              id: 1
+            }
+          ]
+        });
+      });
+    });
+    
+    it('should pass along options, including startkey', function () {
+
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+
+      return db.rel.save('post', {
+        title: 'Rails is Omakase',
+        text: 'There are a lot of ala carte blah blah blah',
+        id: 1
+      }).then(function () {
+        return db.rel.save('post', {
+          title: 'Rails is Unagi',
+          text: 'Declicious unagi',
+          id: 2
+        });
+      }).then(function () {
+        
+        return db.rel.find('post', null, {
+          startkey: db.rel.makeDocID({ type: 'post', id: 2 }), 
+          limit: 1
+        });
+      }).then(function (res) {
+        res.posts.forEach(function (post) {
+          post.rev.should.be.a('string');
+          delete post.rev;
+        });
+        res.should.deep.equal({
+          posts: [
+            {
+              title: 'Rails is Unagi',
+              text: 'Declicious unagi',
+              id: 2
+            }
+          ]
+        });
+      });
+    }); 
+
+    it('should pass along options, including endkey', function () {
+
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+
+      return db.rel.save('post', {
+        title: 'Rails is Omakase',
+        text: 'There are a lot of ala carte blah blah blah',
+        id: 1
+      }).then(function () {
+        return db.rel.save('post', {
+          title: 'Rails is Unagi',
+          text: 'Declicious unagi',
+          id: 2
+        });
+      }).then(function () {
+        return db.rel.find('post', null, {
+          endkey: db.rel.makeDocID({ type: 'post', id: 1 }),
+        });
+      }).then(function (res) {
+        res.posts.forEach(function (post) {
+          post.rev.should.be.a('string');
+          delete post.rev;
+        });
+        res.should.deep.equal({
+          posts: [
+            {
+              title: 'Rails is Omakase',
+              text: 'There are a lot of ala carte blah blah blah',
+              id: 1
+            }
+          ]
+        });
+      });
+    });
   });
 }
