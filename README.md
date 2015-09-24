@@ -63,7 +63,7 @@ API
 * [`db.rel.find(type)`](#dbrelfindtype)
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
-* [`db.rel.find(type, null, options)`](#dbrelfindtype-null-options)
+* [`db.rel.find(type, options)`](#dbrelfindtype-options)
 * [`db.rel.del(type, object)`](#dbreldeltype-object)
 * [`db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)`](#dbrelputattachmenttype-object-attachmentid-attachment-attachmenttype)
 * [`db.rel.getAttachment(type, id, attachmentId)`](#dbrelgetattachmenttype-id-attachmentid)
@@ -288,12 +288,12 @@ If an `id` isn't found, it's simply not returned. Notice that above, there is no
 
 `find` results are always returned ordered by id. The order of your `ids` array will not necessarily be reflected in the returned array of objects.
 
-### db.rel.find(type, null, options)
+### db.rel.find(type, options)
 
-Find all objects with a given type and specified options as defined for [PouchDB batch fetch](http://pouchdb.com/api.html#batch_fetch). Returns a Promise.
+Find all objects with a given type and limit the results via the passed in options.  Returns a Promise.
 
 ```js
-db.rel.find('post', null, {startkey: db.rel.makeDocID({type: 'post', id: 1}), limit: 2});
+db.rel.find('post',{startkey: 1, limit: 2});
 ```
 
 Result:
@@ -316,7 +316,10 @@ Result:
   ]
 }
 ```
-The `include_docs`, `conflicts`, and `attachments` options are not supported.
+The following options based on the options for [PouchDB batch fetch](http://pouchdb.com/api.html#batch_fetch) are available:
+* `startkey` & `endkey`:  Get documents with IDs in a certain range (inclusive/inclusive).
+* `limit`: Maximum number of documents to return.
+* `skip`: Number of docs to skip before returning (warning: poor performance on IndexedDB/LevelDB!).
 
 ### db.rel.del(type, object)
 
