@@ -64,6 +64,7 @@ API
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
 * [`db.rel.find(type, options)`](#dbrelfindtype-options)
+* [`db.rel.query(type, func, options)`](#dbrelquerytype-func-options)
 * [`db.rel.del(type, object)`](#dbreldeltype-object)
 * [`db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)`](#dbrelputattachmenttype-object-attachmentid-attachment-attachmenttype)
 * [`db.rel.getAttachment(type, id, attachmentId)`](#dbrelgetattachmenttype-id-attachmentid)
@@ -320,6 +321,47 @@ The following options based on the options for [PouchDB batch fetch](http://pouc
 * `startkey` & `endkey`:  Get documents with IDs in a certain range (inclusive/inclusive).
 * `limit`: Maximum number of documents to return.
 * `skip`: Number of docs to skip before returning (warning: poor performance on IndexedDB/LevelDB!).
+
+### db.rel.query(type, func, options)
+
+Invoke a map/reduce function to find results for the given type and limit the results via the passed in options.  Returns a Promise.
+
+```js
+db.rel.query('post','index/by_text',{limit: 2});
+```
+
+Result:
+
+```js
+{
+  "posts": [
+    {
+      "title": "Rails is Unagi",
+      "text": "Delicious unagi. Mmmmmm.",
+      "id": 1,
+      "rev": "1-0ae315ee597b22cc4b1acf9e0edc35ba"
+    },  
+    {
+      "title": "Maybe Rails is more like a sushi buffet",
+      "text": "Heresy!",
+      "id": 2,
+      "rev": "1-6d8ac6d86d01b91cfbe2f53e0c81bb86"
+    }
+  ]
+}
+```
+The following options based on the options for [PouchDB query database](http://pouchdb.com/api.html#query_database) are available:
+* `func`: Map/reduce function, which can be one of the following:
+ * A full CouchDB-style map/reduce view: `{map : ..., reduce: ...}`.
+ * A map function by itself (no reduce).
+ * The name of a view in an existing design document (e.g. 'mydesigndoc/myview', or 'myview' as a shorthand for 'myview/myview').
+* `options.startkey` & `options.endkey`:  Get documents with IDs in a certain range (inclusive/inclusive).
+* `options.key`:  Get objects that match this ID as returned from the map/reduce function.
+* `option.keys`:  Get objects that match this array of IDs as returned from the map/reduce function. Results will be ordered by this array of IDs.
+* `option.limit`: Maximum number of documents to return.
+* `option.skip`: Number of docs to skip before returning (warning: poor performance on IndexedDB/LevelDB!).
+
+`query` results are returned as ordered by the ids returned from the map/reduce function unless the keys option is passed in.
 
 ### db.rel.del(type, object)
 
