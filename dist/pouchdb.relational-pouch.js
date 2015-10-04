@@ -299,6 +299,18 @@ exports.setSchema = function (schema) {
       opts.keys = idOrIds.map(function (id) {
         return serialize(typeInfo.documentType, id);
       });
+    } else if (typeof idOrIds === 'object') {
+      if (typeof idOrIds.startkey  === 'undefined' || idOrIds.startkey === null) {
+        opts.startkey = serialize(typeInfo.documentType);
+      } else {
+        opts.startkey = serialize(typeInfo.documentType, idOrIds.startkey);
+      }
+      if (typeof idOrIds.endkey  === 'undefined' || idOrIds.endkey === null) {
+        opts.endkey = serialize(typeInfo.documentType, {});
+      } else {
+        opts.endkey = serialize(typeInfo.documentType, idOrIds.endkey);
+      }
+      opts = _addAllowedOptions(idOrIds, ['limit', 'skip'], opts);
     } else {
     // find by single id
       opts.key = serialize(typeInfo.documentType, idOrIds);
@@ -309,106 +321,146 @@ exports.setSchema = function (schema) {
     }
 
     return db.allDocs(opts).then(function (pouchRes) {
-      var tasks = pouchRes.rows.filter(function (row) {
-        return row.doc && !row.value.deleted;
-      }).map(function (row) {
-        var obj = fromRawDoc(row.doc);
-
-        foundObjects.get(type).set(JSON.stringify(obj.id), obj);
-
-        // fetch all relations
-        var subTasks = [];
-        Object.keys(typeInfo.relations || {}).forEach(function (field) {
-          var relationDef = typeInfo.relations[field];
-          var relationType = Object.keys(relationDef)[0];
-          var relatedType = relationDef[relationType];
-          if (typeof relatedType !== 'string') {
-            var relationOptions = relatedType.options;
-            if (relationOptions && relationOptions.async) {
-              return;
-            }
-            relatedType = relatedType.type;
-          }
-          if (relationType === 'belongsTo') {
-            var relatedId = obj[field];
-            if (typeof relatedId !== 'undefined') {
-              subTasks.push(Promise.resolve().then(function () {
-
-                // short-circuit if it's already in the foundObjects
-                // else we could get caught in an infinite loop
-                if (foundObjects.has(relatedType) &&
-                    foundObjects.get(relatedType).has(JSON.stringify(relatedId))) {
-                  return;
-                }
-
-                // signal that we need to fetch it
-                return {
-                  relatedType: relatedType,
-                  relatedIds: [relatedId]
-                };
-              }));
-            }
-          } else { // hasMany
-            var relatedIds = extend(true, [], obj[field]);
-            if (typeof relatedIds !== 'undefined' && relatedIds.length) {
-              subTasks.push(Promise.resolve().then(function () {
-
-                // filter out all ids that are already in the foundObjects
-                for (var i = relatedIds.length - 1; i >= 0; i--) {
-                  var relatedId = relatedIds[i];
-                  if (foundObjects.has(relatedType) &&
-                      foundObjects.get(relatedType).has(JSON.stringify(relatedId))) {
-                    delete relatedIds[i];
-                  }
-                }
-                relatedIds = relatedIds.filter(function (relatedId) {
-                  return typeof relatedId !== 'undefined';
-                });
-
-                // just return the ids and the types. We'll find them all
-                // in a single bulk operation in order to minimize HTTP requests
-                if (relatedIds.length) {
-                  return {
-                    relatedType: relatedType,
-                    relatedIds: relatedIds
-                  };
-                }
-              }));
-            }
-          }
-        });
-        return Promise.all(subTasks);
-      });
-      return Promise.all(tasks);
+      return _resolveResults(pouchRes, foundObjects, type, typeInfo);
     }).then(function (listsOfFetchTasks) {
-      // fetch in as few http requests as possible
-      var typesToIds = {};
-      listsOfFetchTasks.forEach(function (fetchTasks) {
-        fetchTasks.forEach(function (fetchTask) {
-          if (!fetchTask) {
+      return _fetchRelationships(listsOfFetchTasks, foundObjects, true);
+    });
+  }
+  
+  function _addAllowedOptions(passedOptions, allowedOptions, currentOptions) {
+    allowedOptions.forEach(function (option) {
+      if (typeof passedOptions[option] !== 'undefined' && passedOptions.skip !== null) {
+        currentOptions[option] = passedOptions[option];
+      }
+    });
+    return currentOptions;
+  }
+    
+  function _resolveResults(pouchRes, foundObjects, type, typeInfo) {
+    var tasks = pouchRes.rows.filter(function (row) {
+      return row.doc && (!row.value || !row.value.deleted);
+    }).map(function (row) {
+      var obj = fromRawDoc(row.doc);
+
+      foundObjects.get(type).set(JSON.stringify(obj.id), obj);
+
+      // fetch all relations
+      var subTasks = [];
+      Object.keys(typeInfo.relations || {}).forEach(function (field) {
+        var relationDef = typeInfo.relations[field];
+        var relationType = Object.keys(relationDef)[0];
+        var relatedType = relationDef[relationType];
+        if (typeof relatedType !== 'string') {
+          var relationOptions = relatedType.options;
+          if (relationOptions && relationOptions.async) {
             return;
           }
-          typesToIds[fetchTask.relatedType] =
-            (typesToIds[fetchTask.relatedType] || []).concat(fetchTask.relatedIds);
-        });
-      });
+          relatedType = relatedType.type;
+        }
+        if (relationType === 'belongsTo') {
+          var relatedId = obj[field];
+          if (typeof relatedId !== 'undefined') {
+            subTasks.push(Promise.resolve().then(function () {
 
-      return utils.series(Object.keys(typesToIds).map(function (relatedType) {
-        var relatedIds = uniq(typesToIds[relatedType]);
-        return function () {return _find(relatedType, relatedIds, foundObjects); };
-      })).then(function () {
-        var res = {};
-        foundObjects.forEach(function (found, type) {
-          var typeInfo = getTypeInfo(type);
-          var list = res[typeInfo.plural] = [];
-          found.forEach(function (obj) {
-            list.push(obj);
-          });
-          list.sort(lexCompare);
-        });
-        return res;
+              // short-circuit if it's already in the foundObjects
+              // else we could get caught in an infinite loop
+              if (foundObjects.has(relatedType) &&
+                  foundObjects.get(relatedType).has(JSON.stringify(relatedId))) {
+                return;
+              }
+
+              // signal that we need to fetch it
+              return {
+                relatedType: relatedType,
+                relatedIds: [relatedId]
+              };
+            }));
+          }
+        } else { // hasMany
+          var relatedIds = extend(true, [], obj[field]);
+          if (typeof relatedIds !== 'undefined' && relatedIds.length) {
+            subTasks.push(Promise.resolve().then(function () {
+
+              // filter out all ids that are already in the foundObjects
+              for (var i = relatedIds.length - 1; i >= 0; i--) {
+                var relatedId = relatedIds[i];
+                if (foundObjects.has(relatedType) &&
+                    foundObjects.get(relatedType).has(JSON.stringify(relatedId))) {
+                  delete relatedIds[i];
+                }
+              }
+              relatedIds = relatedIds.filter(function (relatedId) {
+                return typeof relatedId !== 'undefined';
+              });
+
+              // just return the ids and the types. We'll find them all
+              // in a single bulk operation in order to minimize HTTP requests
+              if (relatedIds.length) {
+                return {
+                  relatedType: relatedType,
+                  relatedIds: relatedIds
+                };
+              }
+            }));
+          }
+        }
+      });
+      return Promise.all(subTasks);
+    });
+    return Promise.all(tasks);
+  }
+
+  function _fetchRelationships(listsOfFetchTasks, foundObjects, shouldSort) {
+    // fetch in as few http requests as possible
+    var typesToIds = {};
+    listsOfFetchTasks.forEach(function (fetchTasks) {
+      fetchTasks.forEach(function (fetchTask) {
+        if (!fetchTask) {
+          return;
+        }
+        typesToIds[fetchTask.relatedType] =
+          (typesToIds[fetchTask.relatedType] || []).concat(fetchTask.relatedIds);
       });
     });
+
+    return utils.series(Object.keys(typesToIds).map(function (relatedType) {
+      var relatedIds = uniq(typesToIds[relatedType]);
+      return function () {return _find(relatedType, relatedIds, foundObjects); };
+    })).then(function () {
+      var res = {};
+      foundObjects.forEach(function (found, type) {
+        var typeInfo = getTypeInfo(type);
+        var list = res[typeInfo.plural] = [];
+        found.forEach(function (obj) {
+          list.push(obj);
+        });
+        if (shouldSort) {
+          list.sort(lexCompare);
+        }
+      });
+      return res;
+    });
+  }
+  
+  function _query(type, fun, options) {
+    var foundObjects = new collections.Map();
+    foundObjects.set(type, new collections.Map());
+    var typeInfo = getTypeInfo(type);
+    var opts = _addAllowedOptions(options, [
+      'startkey',
+      'endkey',
+      'key',
+      'keys',
+      'limit', 
+      'skip'
+    ], {});
+    opts.include_docs = true;
+    return db.query(fun, opts).then(function (pouchRes) {
+      return _resolveResults(pouchRes, foundObjects, type, typeInfo);
+    }).then(function (listsOfFetchTasks) {
+      return _fetchRelationships(listsOfFetchTasks, foundObjects, false);
+    });
+    
   }
 
   function putAttachment(type, obj, attachmentId, attachment, attachmentType) {
@@ -465,6 +517,12 @@ exports.setSchema = function (schema) {
       return _del(type, obj);
     });
   }
+  
+  function query(type, fun, options) {
+    return Promise.resolve().then(function () {
+      return _query(type, fun, options);
+    });
+  }
 
   function parseDocID(str) {
     var idx = str.indexOf('_');
@@ -505,7 +563,8 @@ exports.setSchema = function (schema) {
     putAttachment: putAttachment,
     removeAttachment: removeAttachment,
     parseDocID: parseDocID,
-    makeDocID: makeDocID
+    makeDocID: makeDocID,
+    query: query
   };
 };
 
@@ -601,59 +660,75 @@ module.exports = uuid;
 
 
 },{}],4:[function(require,module,exports){
-// shim for using process in browser
+var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};'use strict';
+var Mutation = global.MutationObserver || global.WebKitMutationObserver;
 
-var process = module.exports = {};
+var scheduleDrain;
 
-process.nextTick = (function () {
-    var canSetImmediate = typeof window !== 'undefined'
-    && window.setImmediate;
-    var canPost = typeof window !== 'undefined'
-    && window.postMessage && window.addEventListener
-    ;
-
-    if (canSetImmediate) {
-        return function (f) { return window.setImmediate(f) };
-    }
-
-    if (canPost) {
-        var queue = [];
-        window.addEventListener('message', function (ev) {
-            var source = ev.source;
-            if ((source === window || source === null) && ev.data === 'process-tick') {
-                ev.stopPropagation();
-                if (queue.length > 0) {
-                    var fn = queue.shift();
-                    fn();
-                }
-            }
-        }, true);
-
-        return function nextTick(fn) {
-            queue.push(fn);
-            window.postMessage('process-tick', '*');
-        };
-    }
-
-    return function nextTick(fn) {
-        setTimeout(fn, 0);
+{
+  if (Mutation) {
+    var called = 0;
+    var observer = new Mutation(nextTick);
+    var element = global.document.createTextNode('');
+    observer.observe(element, {
+      characterData: true
+    });
+    scheduleDrain = function () {
+      element.data = (called = ++called % 2);
     };
-})();
+  } else if (!global.setImmediate && typeof global.MessageChannel !== 'undefined') {
+    var channel = new global.MessageChannel();
+    channel.port1.onmessage = nextTick;
+    scheduleDrain = function () {
+      channel.port2.postMessage(0);
+    };
+  } else if ('document' in global && 'onreadystatechange' in global.document.createElement('script')) {
+    scheduleDrain = function () {
 
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
+      // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
+      // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
+      var scriptEl = global.document.createElement('script');
+      scriptEl.onreadystatechange = function () {
+        nextTick();
 
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
+        scriptEl.onreadystatechange = null;
+        scriptEl.parentNode.removeChild(scriptEl);
+        scriptEl = null;
+      };
+      global.document.documentElement.appendChild(scriptEl);
+    };
+  } else {
+    scheduleDrain = function () {
+      setTimeout(nextTick, 0);
+    };
+  }
 }
 
-// TODO(shtylman)
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
+var draining;
+var queue = [];
+//named nextTick for less confusing stack traces
+function nextTick() {
+  draining = true;
+  var i, oldQueue;
+  var len = queue.length;
+  while (len) {
+    oldQueue = queue;
+    queue = [];
+    i = -1;
+    while (++i < len) {
+      oldQueue[i]();
+    }
+    len = queue.length;
+  }
+  draining = false;
+}
+
+module.exports = immediate;
+function immediate(task) {
+  if (queue.push(task) === 1 && !draining) {
+    scheduleDrain();
+  }
+}
 
 },{}],5:[function(require,module,exports){
 if (typeof Object.create === 'function') {
@@ -1025,78 +1100,7 @@ function unwrap(promise, func, value) {
     }
   });
 }
-},{"./handlers":8,"immediate":19}],19:[function(require,module,exports){
-var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};'use strict';
-var Mutation = global.MutationObserver || global.WebKitMutationObserver;
-
-var scheduleDrain;
-
-{
-  if (Mutation) {
-    var called = 0;
-    var observer = new Mutation(nextTick);
-    var element = global.document.createTextNode('');
-    observer.observe(element, {
-      characterData: true
-    });
-    scheduleDrain = function () {
-      element.data = (called = ++called % 2);
-    };
-  } else if (!global.setImmediate && typeof global.MessageChannel !== 'undefined') {
-    var channel = new global.MessageChannel();
-    channel.port1.onmessage = nextTick;
-    scheduleDrain = function () {
-      channel.port2.postMessage(0);
-    };
-  } else if ('document' in global && 'onreadystatechange' in global.document.createElement('script')) {
-    scheduleDrain = function () {
-
-      // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
-      // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
-      var scriptEl = global.document.createElement('script');
-      scriptEl.onreadystatechange = function () {
-        nextTick();
-
-        scriptEl.onreadystatechange = null;
-        scriptEl.parentNode.removeChild(scriptEl);
-        scriptEl = null;
-      };
-      global.document.documentElement.appendChild(scriptEl);
-    };
-  } else {
-    scheduleDrain = function () {
-      setTimeout(nextTick, 0);
-    };
-  }
-}
-
-var draining;
-var queue = [];
-//named nextTick for less confusing stack traces
-function nextTick() {
-  draining = true;
-  var i, oldQueue;
-  var len = queue.length;
-  while (len) {
-    oldQueue = queue;
-    queue = [];
-    i = -1;
-    while (++i < len) {
-      oldQueue[i]();
-    }
-    len = queue.length;
-  }
-  draining = false;
-}
-
-module.exports = immediate;
-function immediate(task) {
-  if (queue.push(task) === 1 && !draining) {
-    scheduleDrain();
-  }
-}
-
-},{}],20:[function(require,module,exports){
+},{"./handlers":8,"immediate":4}],19:[function(require,module,exports){
 "use strict";
 
 // Extends method
@@ -1277,6 +1281,61 @@ module.exports = extend;
 
 
 
+},{}],20:[function(require,module,exports){
+// shim for using process in browser
+
+var process = module.exports = {};
+
+process.nextTick = (function () {
+    var canSetImmediate = typeof window !== 'undefined'
+    && window.setImmediate;
+    var canPost = typeof window !== 'undefined'
+    && window.postMessage && window.addEventListener
+    ;
+
+    if (canSetImmediate) {
+        return function (f) { return window.setImmediate(f) };
+    }
+
+    if (canPost) {
+        var queue = [];
+        window.addEventListener('message', function (ev) {
+            var source = ev.source;
+            if ((source === window || source === null) && ev.data === 'process-tick') {
+                ev.stopPropagation();
+                if (queue.length > 0) {
+                    var fn = queue.shift();
+                    fn();
+                }
+            }
+        }, true);
+
+        return function nextTick(fn) {
+            queue.push(fn);
+            window.postMessage('process-tick', '*');
+        };
+    }
+
+    return function nextTick(fn) {
+        setTimeout(fn, 0);
+    };
+})();
+
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+}
+
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+
 },{}],21:[function(require,module,exports){
 "use strict"
 
@@ -1436,5 +1495,5 @@ exports.inherits = require('inherits');
 exports.Promise = Promise;
 exports.extend = require('pouchdb-extend');
 
-},{"__browserify_process":4,"inherits":5,"lie":9,"pouchdb-extend":20}]},{},[2])
+},{"__browserify_process":20,"inherits":5,"lie":9,"pouchdb-extend":19}]},{},[2])
 ;
