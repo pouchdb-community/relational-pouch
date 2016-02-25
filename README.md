@@ -64,6 +64,10 @@ API
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
 * [`db.rel.find(type, options)`](#dbrelfindtype-options)
+* [`db.rel.query(type, query)`](#dbrelquerytype-query)
+* [`db.rel.createIndex(index)`](#dbrelcreateindexindex)
+* [`db.rel.getIndexes()`](#dbrelgetindexes)
+* [`db.rel.deleteIndex(index)`](#dbreldeleteindexindex)
 * [`db.rel.del(type, object)`](#dbreldeltype-object)
 * [`db.rel.putAttachment(type, object, attachmentId, attachment, attachmentType)`](#dbrelputattachmenttype-object-attachmentid-attachment-attachmenttype)
 * [`db.rel.getAttachment(type, id, attachmentId)`](#dbrelgetattachmenttype-id-attachmentid)
@@ -320,6 +324,59 @@ The following options based on the options for [PouchDB batch fetch](http://pouc
 * `startkey` & `endkey`:  Get documents with IDs in a certain range (inclusive/inclusive).
 * `limit`: Maximum number of documents to return.
 * `skip`: Number of docs to skip before returning (warning: poor performance on IndexedDB/LevelDB!).
+
+# db.rel.query(type, query)
+
+Requires the [pouchdb-find](https://github.com/nolanlawson/pouchdb-find) plugin.
+
+This maps to the `db.find` method provided by the `pouchdb-find` plugin. See [pouchdb-find](https://github.com/nolanlawson/pouchdb-find) for more information on how to construct queries.
+
+```js
+db.rel.query("post", {
+  selector: {
+    title: "Rails is Unagi"
+  }
+});
+```
+
+# db.rel.createIndex(index)
+
+Requires the [pouchdb-find](https://github.com/nolanlawson/pouchdb-find) plugin.
+
+This maps to the `db.createIndex` method provided by the `pouchdb-find` plugin. See [pouchdb-find](https://github.com/nolanlawson/pouchdb-find) for more information on how to construct an index.
+
+```js
+db.rel.createIndex({
+  index: {
+    fields: ['title']
+  }
+});
+```
+
+# db.rel.getIndexes()
+
+Requires the [pouchdb-find](https://github.com/nolanlawson/pouchdb-find) plugin.
+
+This maps to the `db.getIndexes` method provided by the `pouchdb-find` plugin. See [pouchdb-find](https://github.com/nolanlawson/pouchdb-find) for more information.
+
+```js
+db.rel.getIndexes().then(function (indexes) {
+  console.log(indexes);
+});
+```
+
+# db.rel.deleteIndex(index)
+
+Requires the [pouchdb-find](https://github.com/nolanlawson/pouchdb-find) plugin.
+
+This maps to the `db.deleteIndex` method provided by the `pouchdb-find` plugin. See [pouchdb-find](https://github.com/nolanlawson/pouchdb-find) for more information on how to delete an index.
+
+```js
+db.rel.getIndexes().then(function (indexes) {
+  var indexToDelete = indexes[1];
+  db.rel.deleteIndex(indexToDelete);
+});
+```
 
 ### db.rel.del(type, object)
 
