@@ -51,6 +51,7 @@
     "mocha": "~1.18",
     "phantomjs": "^1.9.7-5",
     "pouchdb": "5.3.2",
+    "pouchdb-find": "^0.9.0",
     "request": "^2.36.0",
     "sauce-connect-launcher": "^0.4.2",
     "selenium-standalone": "^3.0.2",
