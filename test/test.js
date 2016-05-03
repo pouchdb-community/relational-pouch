@@ -601,7 +601,7 @@ function tests(dbName, dbType) {
         singular: 'post',
         plural: 'posts'
       }]);
-      
+
       var attachment;
       if (process.browser) {
         attachment = blobUtil.createBlob(['Is there life on Mars?']);
@@ -628,7 +628,7 @@ function tests(dbName, dbType) {
         post.attachments.foo.content_type.should.equal('text/plain');
       });
     });
-    
+
     it('When updating the existing document, keeps the attachment', function () {
       db.setSchema([{
         singular: 'post',
@@ -669,7 +669,7 @@ function tests(dbName, dbType) {
         post.attachments.foo.content_type.should.equal('text/plain');
       });
     });
-    
+
     it('Removes the attachment through removal of attachments field', function () {
       db.setSchema([{
         singular: 'post',
@@ -1401,6 +1401,77 @@ function tests(dbName, dbType) {
         });
     });
 
+    it('should fetch all authors even with empty relations', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            'books': {hasMany: 'book'}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            'authors': {hasMany: 'author'}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 19,
+        books: [1]
+      }).then(function () {
+          return db.rel.save('author', {
+            name: 'Peter Straub',
+            id: 2,
+            books: []
+          });
+        }).then(function () {
+          return db.rel.save('book', {
+            title: 'It',
+            id: 1,
+            authors: [19]
+          });
+        }).then(function () {
+          return db.rel.find('authors');
+        }).then(function (res) {
+          ['authors', 'books'].forEach(function (type) {
+            res[type].forEach(function (obj) {
+              obj.rev.should.be.a('string');
+              delete obj.rev;
+            });
+          });
+          res.should.deep.equal({
+            "authors": [
+              {
+                "name": "Peter Straub",
+                "books": [],
+                "id": 2
+              },
+              {
+                "name": "Stephen King",
+                "books": [
+                  1
+                ],
+                "id": 19
+              }
+            ],
+            "books": [
+              {
+                "title": "It",
+                "authors": [
+                  19
+                ],
+                "id": 1
+              }
+            ]
+          });
+        });
+    });
+
     it('does one-to-many', function () {
       db.setSchema([
         {
@@ -1888,7 +1959,7 @@ function tests(dbName, dbType) {
         ]);
       });
     });
-    
+
     it('should pass along options', function () {
 
       db.setSchema([{
@@ -1925,7 +1996,7 @@ function tests(dbName, dbType) {
         });
       });
     });
-    
+
     it('should pass along options, including startkey', function () {
 
       db.setSchema([{
@@ -1945,9 +2016,9 @@ function tests(dbName, dbType) {
           id: 2
         });
       }).then(function () {
-        
+
         return db.rel.find('post', {
-          startkey: 2, 
+          startkey: 2,
           limit: 1
         });
       }).then(function (res) {
@@ -1965,7 +2036,7 @@ function tests(dbName, dbType) {
           ]
         });
       });
-    }); 
+    });
 
     it('should pass along options, including endkey', function () {
 
@@ -2006,7 +2077,7 @@ function tests(dbName, dbType) {
       });
     });
   });
-  
+
   it('should pass along options, including kip', function () {
 
       db.setSchema([{
@@ -2026,9 +2097,9 @@ function tests(dbName, dbType) {
           id: 2
         });
       }).then(function () {
-        
+
         return db.rel.find('post', {
-          skip: 1, 
+          skip: 1,
           limit: 1
         });
       }).then(function (res) {
@@ -2046,6 +2117,6 @@ function tests(dbName, dbType) {
           ]
         });
       });
-    }); 
-  
+    });
+
 }
