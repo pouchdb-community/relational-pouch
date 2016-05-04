@@ -10,6 +10,8 @@ script: npm run $COMMAND
 before_script:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
+  - "npm install add-cors-to-couchdb"
+  - "./node_modules/.bin/add-cors-to-couchdb"
 env:
   matrix:
   - COMMAND=test
