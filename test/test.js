@@ -2,6 +2,7 @@
 'use strict';
 
 var Pouch = require('pouchdb');
+Pouch.plugin(require('pouchdb-find'));
 
 //
 // your plugin goes here
@@ -2046,6 +2047,193 @@ function tests(dbName, dbType) {
           ]
         });
       });
-    }); 
-  
+    });
+
+  describe(dbType + ': indexes and queries', function () {
+    it('should create, get, and delete an index', function () {
+
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var index = {
+        name: 'test1',
+        index: {
+          fields: ['_id', '_rev', 'title', 'text'],
+          selector: {
+            'title': { '$exists': true }
+          },
+          sort: ['title:string']
+        }
+      };
+
+      return db.rel.createIndex(index).then(function (res1) {
+        res1.result.should.equal('created');
+        return db.rel.createIndex(index).then(function (res2) {
+          res2.result.should.equal('exists');
+          return db.rel.getIndexes(index).then(function (res3) {
+            var foundIndex = res3.indexes[1];
+            foundIndex.name.should.equal(index.name);
+            foundIndex.def.fields[0]['_id'].should.equal('asc');
+            foundIndex.def.fields[1]['_rev'].should.equal('asc');
+            foundIndex.def.fields[2]['data.title'].should.equal('asc');
+            foundIndex.def.fields[3]['data.text'].should.equal('asc');
+            foundIndex.def.selector['data.title']['$exists'].should.equal(true);
+            foundIndex.def.sort[0].should.equal('data.title:string');
+            return db.rel.deleteIndex(foundIndex).then(function (res4) {
+              res4.ok.should.equal(true);
+            });
+          });
+        });
+      });
+    });
+
+    it('should create, get, and delete an index', function () {
+
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var index = {
+        name: 'test2',
+        index: {
+          fields: [
+            { name: '_id', type: 'string' },
+            { name: '_rev', type: 'string' },
+            { name: 'title', type: 'string' },
+            { name: 'text', type: 'string' },
+            { name: 'author', type: 'string' }
+          ],
+          selector: {
+            author: {
+              '$in': ['Author1']
+            }
+          },
+          sort: ['title']
+        }
+      };
+
+      return db.rel.createIndex(index).then(function (res1) {
+        res1.result.should.equal('created');
+        return db.rel.createIndex(index).then(function (res2) {
+          res2.result.should.equal('exists');
+          return db.rel.getIndexes(index).then(function (res3) {
+            var foundIndex = res3.indexes[1];
+            foundIndex.name.should.equal(index.name);
+            foundIndex.def.fields[0]['name'].should.equal('_id');
+            foundIndex.def.fields[1]['name'].should.equal('_rev');
+            foundIndex.def.fields[2]['name'].should.equal('data.title');
+            foundIndex.def.fields[3]['name'].should.equal('data.text');
+            foundIndex.def.fields[4]['name'].should.equal('data.author');
+            foundIndex.def.selector['data.author']['$in'][0].should.equal('Author1');
+            foundIndex.def.sort[0].should.equal('data.title');
+            return db.rel.deleteIndex(foundIndex).then(function (res4) {
+              res4.ok.should.equal(true);
+            });
+          });
+        });
+      });
+    });
+
+    it('should create, get, and delete an index', function () {
+
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var index = {
+        name: 'test2',
+        index: {
+          fields: [
+            { name: '_id', type: 'string' },
+            { name: '_rev', type: 'string' },
+            { name: 'title', type: 'string' },
+            { name: 'text', type: 'string' },
+            { name: 'author', type: 'string' }
+          ],
+          selector: {
+            '_id': {
+              $gt: null
+            },
+            author: {
+              '$in': ['Author1']
+            }
+          },
+          sort: [{ '_id': 'desc' }, { 'title': 'desc' }]
+        }
+      };
+
+      return db.rel.createIndex(index).then(function (res1) {
+        res1.result.should.equal('created');
+        return db.rel.createIndex(index).then(function (res2) {
+          res2.result.should.equal('exists');
+          return db.rel.getIndexes(index).then(function (res3) {
+            var foundIndex = res3.indexes[1];
+            foundIndex.name.should.equal(index.name);
+            foundIndex.def.fields[0]['name'].should.equal('_id');
+            foundIndex.def.fields[1]['name'].should.equal('_rev');
+            foundIndex.def.fields[2]['name'].should.equal('data.title');
+            foundIndex.def.fields[3]['name'].should.equal('data.text');
+            foundIndex.def.fields[4]['name'].should.equal('data.author');
+            should.exist(foundIndex.def.selector['_id']);
+            foundIndex.def.selector['data.author']['$in'][0].should.equal('Author1');
+            foundIndex.def.sort[0]['_id'].should.equal('desc');
+            foundIndex.def.sort[1]['data.title'].should.equal('desc');
+            return db.rel.deleteIndex(foundIndex).then(function (res4) {
+              res4.ok.should.equal(true);
+            });
+          });
+        });
+      });
+    });
+
+    it('should query against an index', function () {
+
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+
+      var index = {
+        index: {
+          fields: ['title']
+        }
+      };
+
+      var query = {
+        selector: {
+          title: 'Rails is Omakase'
+        }
+      };
+
+      return db.rel.save('post', {
+        title: 'Rails is Omakase',
+        text: 'There are a lot of ala carte blah blah blah',
+        id: 1
+      }).then(function () {
+        return db.rel.save('post', {
+          title: 'Rails is Unagi',
+          text: 'Declicious unagi',
+          id: 2
+        });
+      }).then(function () {
+        return db.rel.save('post', {
+          title: 'Untitled',
+          text: 'A post yet to be titled...',
+          id: 3
+        });
+      }).then(function () {
+        return db.rel.createIndex(index).then(function (res1) {
+          res1.result.should.equal('created');
+          return db.rel.query('post', query).then(function (res2) {
+            res2.posts.length.should.equal(1);
+            res2.posts[0].title.should.equal('Rails is Omakase');
+          });
+        });
+      });
+    });
+  });
 }
