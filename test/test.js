@@ -1990,7 +1990,7 @@ function tests(dbName, dbType) {
           singular: 'author',
           plural: 'authors',
           relations: {
-            books: {hasMany: {type: 'books', options: {async: false}}}
+            books: {hasMany: 'books'}
           }
         },
         {
