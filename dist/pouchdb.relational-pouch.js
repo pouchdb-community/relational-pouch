@@ -234,7 +234,7 @@ exports.setSchema = function (schema) {
    * Transform a PouchDB doc into a relational object.
    */
   function fromRawDoc(pouchDoc) {
-    var obj = pouchDoc.data;
+    var obj = pouchDoc.data || {};
     obj.id = deserialize(pouchDoc._id);
     obj.rev = pouchDoc._rev;
     if (pouchDoc._attachments) {
