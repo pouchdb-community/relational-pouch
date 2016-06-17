@@ -76,7 +76,7 @@ LazySet.prototype["delete"] = function (key) {
 },{}],2:[function(require,module,exports){
 'use strict';
 
-var utils = require('./../pouch-utils');
+var utils = require('./pouch-utils');
 var extend = utils.extend;
 var Promise = utils.Promise;
 var collections = require('./collections');
@@ -531,7 +531,107 @@ if (typeof window !== 'undefined' && window.PouchDB) {
   window.PouchDB.plugin(exports);
 }
 
-},{"./../pouch-utils":22,"./collections":1,"./uuid":3,"uniq":21}],3:[function(require,module,exports){
+},{"./collections":1,"./pouch-utils":3,"./uuid":4,"uniq":24}],3:[function(require,module,exports){
+var process=require("__browserify_process"),global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};'use strict';
+
+var Promise = require('pouchdb-promise');
+/* istanbul ignore next */
+if (typeof window !== 'undefined' && window.PouchDB) {
+  Promise = window.PouchDB.utils.Promise;
+} else {
+  Promise = typeof global.Promise === 'function' ? global.Promise : require('lie');
+}
+/* istanbul ignore next */
+exports.once = function (fun) {
+  var called = false;
+  return exports.getArguments(function (args) {
+    if (called) {
+      console.trace();
+      throw new Error('once called  more than once');
+    } else {
+      called = true;
+      fun.apply(this, args);
+    }
+  });
+};
+/* istanbul ignore next */
+exports.getArguments = function (fun) {
+  return function () {
+    var len = arguments.length;
+    var args = new Array(len);
+    var i = -1;
+    while (++i < len) {
+      args[i] = arguments[i];
+    }
+    return fun.call(this, args);
+  };
+};
+/* istanbul ignore next */
+exports.toPromise = function (func) {
+  //create the function we will be returning
+  return exports.getArguments(function (args) {
+    var self = this;
+    var tempCB = (typeof args[args.length - 1] === 'function') ? args.pop() : false;
+    // if the last argument is a function, assume its a callback
+    var usedCB;
+    if (tempCB) {
+      // if it was a callback, create a new callback which calls it,
+      // but do so async so we don't trap any errors
+      usedCB = function (err, resp) {
+        process.nextTick(function () {
+          tempCB(err, resp);
+        });
+      };
+    }
+    var promise = new Promise(function (fulfill, reject) {
+      try {
+        var callback = exports.once(function (err, mesg) {
+          if (err) {
+            reject(err);
+          } else {
+            fulfill(mesg);
+          }
+        });
+        // create a callback for this invocation
+        // apply the function in the orig context
+        args.push(callback);
+        func.apply(self, args);
+      } catch (e) {
+        reject(e);
+      }
+    });
+    // if there is a callback, call it back
+    if (usedCB) {
+      promise.then(function (result) {
+        usedCB(null, result);
+      }, usedCB);
+    }
+    promise.cancel = function () {
+      return this;
+    };
+    return promise;
+  });
+};
+
+// execute some promises in a chain
+exports.series = function (promiseFactories) {
+  var chain = exports.Promise.resolve();
+  var overallRes = new Array(promiseFactories.length);
+  promiseFactories.forEach(function (promiseFactory, i) {
+    chain = chain.then(promiseFactories[i]).then(function (res) {
+      overallRes[i] = res;
+    });
+  });
+  return chain.then(function () {
+    return overallRes;
+  });
+};
+
+exports.inherits = require('inherits');
+exports.Promise = Promise;
+exports.extend = require('pouchdb-extend');
+
+},{"__browserify_process":23,"inherits":6,"lie":10,"pouchdb-extend":20,"pouchdb-promise":21}],4:[function(require,module,exports){
 "use strict";
 
 // BEGIN Math.uuid.js
@@ -617,7 +717,7 @@ function uuid(len, radix) {
 module.exports = uuid;
 
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};'use strict';
 var Mutation = global.MutationObserver || global.WebKitMutationObserver;
 
@@ -688,7 +788,7 @@ function immediate(task) {
   }
 }
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -713,13 +813,13 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 module.exports = INTERNAL;
 
 function INTERNAL() {}
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise');
 var reject = require('./reject');
@@ -763,7 +863,7 @@ function all(iterable) {
     }
   }
 }
-},{"./INTERNAL":6,"./handlers":8,"./promise":10,"./reject":13,"./resolve":14}],8:[function(require,module,exports){
+},{"./INTERNAL":7,"./handlers":9,"./promise":11,"./reject":14,"./resolve":15}],9:[function(require,module,exports){
 'use strict';
 var tryCatch = require('./tryCatch');
 var resolveThenable = require('./resolveThenable');
@@ -810,7 +910,7 @@ function getThen(obj) {
   }
 }
 
-},{"./resolveThenable":15,"./states":16,"./tryCatch":17}],9:[function(require,module,exports){
+},{"./resolveThenable":16,"./states":17,"./tryCatch":18}],10:[function(require,module,exports){
 module.exports = exports = require('./promise');
 
 exports.resolve = require('./resolve');
@@ -818,7 +918,7 @@ exports.reject = require('./reject');
 exports.all = require('./all');
 exports.race = require('./race');
 
-},{"./all":7,"./promise":10,"./race":12,"./reject":13,"./resolve":14}],10:[function(require,module,exports){
+},{"./all":8,"./promise":11,"./race":13,"./reject":14,"./resolve":15}],11:[function(require,module,exports){
 'use strict';
 
 var unwrap = require('./unwrap');
@@ -862,7 +962,7 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
   return promise;
 };
 
-},{"./INTERNAL":6,"./queueItem":11,"./resolveThenable":15,"./states":16,"./unwrap":18}],11:[function(require,module,exports){
+},{"./INTERNAL":7,"./queueItem":12,"./resolveThenable":16,"./states":17,"./unwrap":19}],12:[function(require,module,exports){
 'use strict';
 var handlers = require('./handlers');
 var unwrap = require('./unwrap');
@@ -892,7 +992,7 @@ QueueItem.prototype.otherCallRejected = function (value) {
   unwrap(this.promise, this.onRejected, value);
 };
 
-},{"./handlers":8,"./unwrap":18}],12:[function(require,module,exports){
+},{"./handlers":9,"./unwrap":19}],13:[function(require,module,exports){
 'use strict';
 var Promise = require('./promise');
 var reject = require('./reject');
@@ -933,7 +1033,7 @@ function race(iterable) {
   }
 }
 
-},{"./INTERNAL":6,"./handlers":8,"./promise":10,"./reject":13,"./resolve":14}],13:[function(require,module,exports){
+},{"./INTERNAL":7,"./handlers":9,"./promise":11,"./reject":14,"./resolve":15}],14:[function(require,module,exports){
 'use strict';
 
 var Promise = require('./promise');
@@ -945,7 +1045,7 @@ function reject(reason) {
 	var promise = new Promise(INTERNAL);
 	return handlers.reject(promise, reason);
 }
-},{"./INTERNAL":6,"./handlers":8,"./promise":10}],14:[function(require,module,exports){
+},{"./INTERNAL":7,"./handlers":9,"./promise":11}],15:[function(require,module,exports){
 'use strict';
 
 var Promise = require('./promise');
@@ -980,7 +1080,7 @@ function resolve(value) {
       return EMPTYSTRING;
   }
 }
-},{"./INTERNAL":6,"./handlers":8,"./promise":10}],15:[function(require,module,exports){
+},{"./INTERNAL":7,"./handlers":9,"./promise":11}],16:[function(require,module,exports){
 'use strict';
 var handlers = require('./handlers');
 var tryCatch = require('./tryCatch');
@@ -1013,14 +1113,14 @@ function safelyResolveThenable(self, thenable) {
   }
 }
 exports.safely = safelyResolveThenable;
-},{"./handlers":8,"./tryCatch":17}],16:[function(require,module,exports){
+},{"./handlers":9,"./tryCatch":18}],17:[function(require,module,exports){
 // Lazy man's symbols for states
 
 exports.REJECTED = ['REJECTED'];
 exports.FULFILLED = ['FULFILLED'];
 exports.PENDING = ['PENDING'];
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 module.exports = tryCatch;
@@ -1036,7 +1136,7 @@ function tryCatch(func, value) {
   }
   return out;
 }
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 'use strict';
 
 var immediate = require('immediate');
@@ -1058,7 +1158,7 @@ function unwrap(promise, func, value) {
     }
   });
 }
-},{"./handlers":8,"immediate":4}],19:[function(require,module,exports){
+},{"./handlers":9,"immediate":5}],20:[function(require,module,exports){
 "use strict";
 
 // Extends method
@@ -1239,7 +1339,273 @@ module.exports = extend;
 
 
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
+'use strict';
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var lie = _interopDefault(require('lie'));
+
+/* istanbul ignore next */
+var PouchPromise = typeof Promise === 'function' ? Promise : lie;
+
+module.exports = PouchPromise;
+},{"lie":22}],22:[function(require,module,exports){
+'use strict';
+var immediate = require('immediate');
+
+/* istanbul ignore next */
+function INTERNAL() {}
+
+var handlers = {};
+
+var REJECTED = ['REJECTED'];
+var FULFILLED = ['FULFILLED'];
+var PENDING = ['PENDING'];
+
+module.exports = Promise;
+
+function Promise(resolver) {
+  if (typeof resolver !== 'function') {
+    throw new TypeError('resolver must be a function');
+  }
+  this.state = PENDING;
+  this.queue = [];
+  this.outcome = void 0;
+  if (resolver !== INTERNAL) {
+    safelyResolveThenable(this, resolver);
+  }
+}
+
+Promise.prototype["catch"] = function (onRejected) {
+  return this.then(null, onRejected);
+};
+Promise.prototype.then = function (onFulfilled, onRejected) {
+  if (typeof onFulfilled !== 'function' && this.state === FULFILLED ||
+    typeof onRejected !== 'function' && this.state === REJECTED) {
+    return this;
+  }
+  var promise = new this.constructor(INTERNAL);
+  if (this.state !== PENDING) {
+    var resolver = this.state === FULFILLED ? onFulfilled : onRejected;
+    unwrap(promise, resolver, this.outcome);
+  } else {
+    this.queue.push(new QueueItem(promise, onFulfilled, onRejected));
+  }
+
+  return promise;
+};
+function QueueItem(promise, onFulfilled, onRejected) {
+  this.promise = promise;
+  if (typeof onFulfilled === 'function') {
+    this.onFulfilled = onFulfilled;
+    this.callFulfilled = this.otherCallFulfilled;
+  }
+  if (typeof onRejected === 'function') {
+    this.onRejected = onRejected;
+    this.callRejected = this.otherCallRejected;
+  }
+}
+QueueItem.prototype.callFulfilled = function (value) {
+  handlers.resolve(this.promise, value);
+};
+QueueItem.prototype.otherCallFulfilled = function (value) {
+  unwrap(this.promise, this.onFulfilled, value);
+};
+QueueItem.prototype.callRejected = function (value) {
+  handlers.reject(this.promise, value);
+};
+QueueItem.prototype.otherCallRejected = function (value) {
+  unwrap(this.promise, this.onRejected, value);
+};
+
+function unwrap(promise, func, value) {
+  immediate(function () {
+    var returnValue;
+    try {
+      returnValue = func(value);
+    } catch (e) {
+      return handlers.reject(promise, e);
+    }
+    if (returnValue === promise) {
+      handlers.reject(promise, new TypeError('Cannot resolve promise with itself'));
+    } else {
+      handlers.resolve(promise, returnValue);
+    }
+  });
+}
+
+handlers.resolve = function (self, value) {
+  var result = tryCatch(getThen, value);
+  if (result.status === 'error') {
+    return handlers.reject(self, result.value);
+  }
+  var thenable = result.value;
+
+  if (thenable) {
+    safelyResolveThenable(self, thenable);
+  } else {
+    self.state = FULFILLED;
+    self.outcome = value;
+    var i = -1;
+    var len = self.queue.length;
+    while (++i < len) {
+      self.queue[i].callFulfilled(value);
+    }
+  }
+  return self;
+};
+handlers.reject = function (self, error) {
+  self.state = REJECTED;
+  self.outcome = error;
+  var i = -1;
+  var len = self.queue.length;
+  while (++i < len) {
+    self.queue[i].callRejected(error);
+  }
+  return self;
+};
+
+function getThen(obj) {
+  // Make sure we only access the accessor once as required by the spec
+  var then = obj && obj.then;
+  if (obj && typeof obj === 'object' && typeof then === 'function') {
+    return function appyThen() {
+      then.apply(obj, arguments);
+    };
+  }
+}
+
+function safelyResolveThenable(self, thenable) {
+  // Either fulfill, reject or reject with error
+  var called = false;
+  function onError(value) {
+    if (called) {
+      return;
+    }
+    called = true;
+    handlers.reject(self, value);
+  }
+
+  function onSuccess(value) {
+    if (called) {
+      return;
+    }
+    called = true;
+    handlers.resolve(self, value);
+  }
+
+  function tryToUnwrap() {
+    thenable(onSuccess, onError);
+  }
+
+  var result = tryCatch(tryToUnwrap);
+  if (result.status === 'error') {
+    onError(result.value);
+  }
+}
+
+function tryCatch(func, value) {
+  var out = {};
+  try {
+    out.value = func(value);
+    out.status = 'success';
+  } catch (e) {
+    out.status = 'error';
+    out.value = e;
+  }
+  return out;
+}
+
+Promise.resolve = resolve;
+function resolve(value) {
+  if (value instanceof this) {
+    return value;
+  }
+  return handlers.resolve(new this(INTERNAL), value);
+}
+
+Promise.reject = reject;
+function reject(reason) {
+  var promise = new this(INTERNAL);
+  return handlers.reject(promise, reason);
+}
+
+Promise.all = all;
+function all(iterable) {
+  var self = this;
+  if (Object.prototype.toString.call(iterable) !== '[object Array]') {
+    return this.reject(new TypeError('must be an array'));
+  }
+
+  var len = iterable.length;
+  var called = false;
+  if (!len) {
+    return this.resolve([]);
+  }
+
+  var values = new Array(len);
+  var resolved = 0;
+  var i = -1;
+  var promise = new this(INTERNAL);
+
+  while (++i < len) {
+    allResolver(iterable[i], i);
+  }
+  return promise;
+  function allResolver(value, i) {
+    self.resolve(value).then(resolveFromAll, function (error) {
+      if (!called) {
+        called = true;
+        handlers.reject(promise, error);
+      }
+    });
+    function resolveFromAll(outValue) {
+      values[i] = outValue;
+      if (++resolved === len && !called) {
+        called = true;
+        handlers.resolve(promise, values);
+      }
+    }
+  }
+}
+
+Promise.race = race;
+function race(iterable) {
+  var self = this;
+  if (Object.prototype.toString.call(iterable) !== '[object Array]') {
+    return this.reject(new TypeError('must be an array'));
+  }
+
+  var len = iterable.length;
+  var called = false;
+  if (!len) {
+    return this.resolve([]);
+  }
+
+  var i = -1;
+  var promise = new this(INTERNAL);
+
+  while (++i < len) {
+    resolver(iterable[i]);
+  }
+  return promise;
+  function resolver(value) {
+    self.resolve(value).then(function (response) {
+      if (!called) {
+        called = true;
+        handlers.resolve(promise, response);
+      }
+    }, function (error) {
+      if (!called) {
+        called = true;
+        handlers.reject(promise, error);
+      }
+    });
+  }
+}
+
+},{"immediate":5}],23:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1294,7 +1660,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],21:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict"
 
 function unique_pred(list, compare) {
@@ -1353,105 +1719,5 @@ function unique(list, compare, sorted) {
 
 module.exports = unique
 
-},{}],22:[function(require,module,exports){
-var process=require("__browserify_process"),global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};'use strict';
-
-var Promise;
-/* istanbul ignore next */
-if (typeof window !== 'undefined' && window.PouchDB) {
-  Promise = window.PouchDB.utils.Promise;
-} else {
-  Promise = typeof global.Promise === 'function' ? global.Promise : require('lie');
-}
-/* istanbul ignore next */
-exports.once = function (fun) {
-  var called = false;
-  return exports.getArguments(function (args) {
-    if (called) {
-      console.trace();
-      throw new Error('once called  more than once');
-    } else {
-      called = true;
-      fun.apply(this, args);
-    }
-  });
-};
-/* istanbul ignore next */
-exports.getArguments = function (fun) {
-  return function () {
-    var len = arguments.length;
-    var args = new Array(len);
-    var i = -1;
-    while (++i < len) {
-      args[i] = arguments[i];
-    }
-    return fun.call(this, args);
-  };
-};
-/* istanbul ignore next */
-exports.toPromise = function (func) {
-  //create the function we will be returning
-  return exports.getArguments(function (args) {
-    var self = this;
-    var tempCB = (typeof args[args.length - 1] === 'function') ? args.pop() : false;
-    // if the last argument is a function, assume its a callback
-    var usedCB;
-    if (tempCB) {
-      // if it was a callback, create a new callback which calls it,
-      // but do so async so we don't trap any errors
-      usedCB = function (err, resp) {
-        process.nextTick(function () {
-          tempCB(err, resp);
-        });
-      };
-    }
-    var promise = new Promise(function (fulfill, reject) {
-      try {
-        var callback = exports.once(function (err, mesg) {
-          if (err) {
-            reject(err);
-          } else {
-            fulfill(mesg);
-          }
-        });
-        // create a callback for this invocation
-        // apply the function in the orig context
-        args.push(callback);
-        func.apply(self, args);
-      } catch (e) {
-        reject(e);
-      }
-    });
-    // if there is a callback, call it back
-    if (usedCB) {
-      promise.then(function (result) {
-        usedCB(null, result);
-      }, usedCB);
-    }
-    promise.cancel = function () {
-      return this;
-    };
-    return promise;
-  });
-};
-
-// execute some promises in a chain
-exports.series = function (promiseFactories) {
-  var chain = exports.Promise.resolve();
-  var overallRes = new Array(promiseFactories.length);
-  promiseFactories.forEach(function (promiseFactory, i) {
-    chain = chain.then(promiseFactories[i]).then(function (res) {
-      overallRes[i] = res;
-    });
-  });
-  return chain.then(function () {
-    return overallRes;
-  });
-};
-
-exports.inherits = require('inherits');
-exports.Promise = Promise;
-exports.extend = require('pouchdb-extend');
-
-},{"__browserify_process":20,"inherits":5,"lie":9,"pouchdb-extend":19}]},{},[2])
+},{}]},{},[2])
 ;
