@@ -21,14 +21,14 @@
     "url": "https://github.com/nolanlawson/relational-pouch/issues"
   },
   "scripts": {
-    "test-node": "TEST_DB=testdb,http://localhost:5984/testdb istanbul test ./node_modules/mocha/bin/_mocha test/test.js",
-    "test-browser": "./bin/test-browser.js",
+    "test-node": "istanbul test ./node_modules/mocha/bin/_mocha test/test.js",
+    "test-browser": "node ./bin/test-browser.js",
     "jshint": "jshint -c .jshintrc lib test/test.js",
-    "test": "npm run jshint && ./bin/run-test.sh",
-    "build": "mkdir -p dist && browserify -t es3ify lib/index.js -o dist/pouchdb.relational-pouch.js && npm run min",
+    "test": "npm run jshint && bash ./bin/run-test.sh",
+    "build": "mkdir -p dist && browserify -t es3ify -s RelationalPouch lib/index.js -o dist/pouchdb.relational-pouch.js && npm run min",
     "min": "uglifyjs dist/pouchdb.relational-pouch.js -mc > dist/pouchdb.relational-pouch.min.js",
     "dev": "browserify test/test.js > test/test-bundle.js && npm run dev-server",
-    "dev-server": "./bin/dev-server.js",
+    "dev-server": "node ./bin/dev-server.js",
     "coverage": "npm test --coverage && istanbul check-coverage --lines 100 --function 100 --statements 100 --branches 100"
   },
   "dependencies": {

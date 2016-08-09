@@ -18,13 +18,8 @@ chai.use(require("chai-as-promised"));
 var should = chai.should(); // var should = chai.should();
 var Promise = require('bluebird'); // var Promise = require('bluebird');
 
-var dbs;
-if (process.browser) {
-  dbs = 'testdb' + Math.random() +
+var dbs = 'testdb' + Math.random() +
     ',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
-} else {
-  dbs = process.env.TEST_DB;
-}
 
 dbs.split(',').forEach(function (db) {
   var dbType = /^http/.test(db) ? 'http' : 'local';
