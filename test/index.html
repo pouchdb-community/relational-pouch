@@ -7,7 +7,7 @@
     <script src="./bind-polyfill.js"></script>
     <script src="../node_modules/mocha/mocha.js"></script>
     <script>
-    mocha.setup('bdd');
+    mocha.setup({ui: 'bdd', timeout: 30000});
     </script>
     <script src="../node_modules/blob-util/dist/blob-util.js"></script>
     <script src="./test-bundle.js"></script>
