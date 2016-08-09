@@ -20,7 +20,7 @@ var b = browserify(indexfile, {
   plugin: [watchify]
 })
 
-w.on('update', bundle);
+b.on('update', bundle);
 bundle();
 
 var filesWritten = false;
