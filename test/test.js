@@ -1842,6 +1842,83 @@ function tests(dbName, dbType) {
         });
       });
     });
+
+    it('does sideload if async option is force to false', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            books: {hasMany: {type: 'books', options: {async: true}}}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            author: {belongsTo: {type: 'author', options: {async: false}}}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 19,
+        books: [1, 2, 3]
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 1,
+          title: 'The Gunslinger'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 2,
+          title: 'The Drawing of the Three'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 3,
+          title: 'The Wastelands'
+        });
+      }).then(function () {
+        return db.rel.find('author', {async: false});
+      }).then(function (res) {
+        ['authors', 'books'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "books": [
+                1,
+                2,
+                3
+              ],
+              "id": 19
+            }
+          ],
+          "books": [
+            {
+              "title": "The Gunslinger",
+              "id": 1
+            },
+            {
+              "title": "The Drawing of the Three",
+              "id": 2
+            },
+            {
+              "title": "The Wastelands",
+              "id": 3
+            }
+          ]
+        });
+      });
+    });
+
     it('does not sideload if async option is true', function () {
       db.setSchema([
         {
@@ -1881,6 +1958,66 @@ function tests(dbName, dbType) {
         });
       }).then(function () {
         return db.rel.find('author');
+      }).then(function (res) {
+        res['authors'].forEach(function (obj) {
+          obj.rev.should.be.a('string');
+          delete obj.rev;
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "books": [
+                1,
+                2,
+                3
+              ],
+              "id": 19
+            }
+          ]
+        });
+      });
+    });
+
+    it('does not sideload if async option is force to true', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            books: {hasMany: 'books'}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            author: {belongsTo: {type: 'author', options: {async: true}}}
+          }
+        }
+      ]);
+
+      return db.rel.save('author', {
+        name: 'Stephen King',
+        id: 19,
+        books: [1, 2, 3]
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 1,
+          title: 'The Gunslinger'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 2,
+          title: 'The Drawing of the Three'
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          id: 3,
+          title: 'The Wastelands'
+        });
+      }).then(function () {
+        return db.rel.find('author', {async: true});
       }).then(function (res) {
         res['authors'].forEach(function (obj) {
           obj.rev.should.be.a('string');

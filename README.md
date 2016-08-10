@@ -284,7 +284,7 @@ Result:
 }
 ```
 
-If an `id` isn't found, it's simply not returned. Notice that above, there is no object with an `id` of `3`. 
+If an `id` isn't found, it's simply not returned. Notice that above, there is no object with an `id` of `3`.
 
 `find` results are always returned ordered by id. The order of your `ids` array will not necessarily be reflected in the returned array of objects.
 
@@ -320,6 +320,8 @@ The following options based on the options for [PouchDB batch fetch](http://pouc
 * `startkey` & `endkey`:  Get documents with IDs in a certain range (inclusive/inclusive).
 * `limit`: Maximum number of documents to return.
 * `skip`: Number of docs to skip before returning (warning: poor performance on IndexedDB/LevelDB!).
+
+Also it is possible to add an async option `{async: true|false}` in order to force to sideload or not dependent objects. Please refer to the [Async relationships](#async-relationships) chapter for more details.
 
 ### db.rel.del(type, object)
 
