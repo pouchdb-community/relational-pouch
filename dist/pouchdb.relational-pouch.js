@@ -210,6 +210,11 @@ exports.setSchema = function (schema) {
             obj[field] = obj[field].id;
           }
         } else { // hasMany
+          var relatedType = relationDef[relationType];
+          if (relatedType.options && relatedType.options.dontsave) {
+            delete obj[field];
+            return;
+          }
           if (obj[field]) {
             var dependents = obj[field].map(function (dependent) {
               if (dependent && typeof dependent.id !== 'undefined') {
@@ -342,6 +347,12 @@ exports.setSchema = function (schema) {
           if (typeof relatedType !== 'string') {
             var relationOptions = relatedType.options;
             if (relationOptions && relationOptions.async) {
+              if (relationOptions.dontsave) {
+                delete obj[field];
+                var links = obj.links || {};
+                links[field] = field;
+                obj.links = links;
+              }
               return;
             }
             relatedType = relatedType.type;
