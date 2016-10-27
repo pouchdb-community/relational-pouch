@@ -344,15 +344,13 @@ exports.setSchema = function (schema) {
           var relationDef = typeInfo.relations[field];
           var relationType = Object.keys(relationDef)[0];
           var relatedType = relationDef[relationType];
+          var relationOptions = {};
           if (typeof relatedType !== 'string') {
-            var relationOptions = relatedType.options;
-            if (relationOptions && relationOptions.async) {
-              if (relationOptions.dontsave) {
-                delete obj[field];
-                var links = obj.links || {};
-                links[field] = field;
-                obj.links = links;
-              }
+            relationOptions = relatedType.options || {};
+            if (relationOptions.dontsave) {
+              delete obj[field];
+            }
+            if (relationOptions.async) {
               return;
             }
             relatedType = relatedType.type;
@@ -377,10 +375,20 @@ exports.setSchema = function (schema) {
               }));
             }
           } else { // hasMany
-            var relatedIds = extend(true, [], obj[field]);
-            if (typeof relatedIds !== 'undefined' && relatedIds.length) {
-              subTasks.push(Promise.resolve().then(function () {
-
+            var relatedIdsPromise;
+            if (relationOptions.dontsave) {
+              relatedIdsPromise = db.rel.findHasMany(relatedType, relationOptions.inverse, obj._id, {include_docs: false}).then(
+                function(data) {
+                    return data.docs.map(function(doc) {
+                        return doc._id;
+                    });
+                });
+            } else {
+              relatedIdsPromise = Promise.resolve(extend(true, [], obj[field]));
+            }
+            
+            subTasks.push(relatedIdsPromise.then(function (relatedIds) {
+              if (typeof relatedIds !== 'undefined' && relatedIds.length) {
                 // filter out all ids that are already in the foundObjects
                 for (var i = relatedIds.length - 1; i >= 0; i--) {
                   var relatedId = relatedIds[i];
@@ -401,8 +409,8 @@ exports.setSchema = function (schema) {
                     relatedIds: relatedIds
                   };
                 }
-              }));
-            }
+              };
+            }));
           }
         });
         return Promise.all(subTasks);
@@ -487,6 +495,19 @@ exports.setSchema = function (schema) {
       return _find(getTypeInfo(type).singular, idOrIds, new collections.Map());
     });
   }
+  
+  function findHasMany(type, belongsToKey, belongsToId) {
+    var selector = {
+            '_id': {
+                '$gt': makeDocID({type: type}),
+                '$lt': makeDocID({type: type, id: {}}),
+            },
+        };
+    selector['data.' + belongsToKey] = belongsToId;
+    
+    //only use opts for return ids or whole doc? returning normal documents is not really good
+    return db.find({ selector: selector });
+  }
 
   function del(type, obj) {
     return Promise.resolve().then(function () {
@@ -528,6 +549,7 @@ exports.setSchema = function (schema) {
   db.rel = {
     save: save,
     find: find,
+    findHasMany: findHasMany,
     del: del,
     getAttachment: getAttachment,
     putAttachment: putAttachment,
