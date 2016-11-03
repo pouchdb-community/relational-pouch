@@ -391,14 +391,15 @@ exports.setSchema = function (schema) {
               }));
             }
           } else { // hasMany
-            
             if (relationOptions.queryInverse) {
-              return _findHasMany(relatedType, relationOptions.queryInverse, obj.id, foundObjects);
+              subTasks.push(_findHasMany(relatedType, relationOptions.queryInverse, obj.id, foundObjects).then(function (res) { return; }));
+              return;
             }
-            var relatedIdsPromise = Promise.resolve(extend(true, [], obj[field]));
             
-            subTasks.push(relatedIdsPromise.then(function (relatedIds) {
-              if (typeof relatedIds !== 'undefined' && relatedIds.length) {
+            var relatedIdsPromise = extend(true, [], obj[field]);
+            
+            if (typeof relatedIds !== 'undefined' && relatedIds.length) {
+              subTasks.push(relatedIdsPromise.then(function (relatedIds) {
                 // filter out all ids that are already in the foundObjects
                 for (var i = relatedIds.length - 1; i >= 0; i--) {
                   var relatedId = relatedIds[i];
@@ -419,8 +420,8 @@ exports.setSchema = function (schema) {
                     relatedIds: relatedIds
                   };
                 }
-              };
-            }));
+              }));
+            };
           }
         });
         return Promise.all(subTasks);
