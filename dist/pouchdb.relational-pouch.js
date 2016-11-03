@@ -211,7 +211,7 @@ exports.setSchema = function (schema) {
           }
         } else { // hasMany
           var relatedType = relationDef[relationType];
-          if (relatedType.options && relatedType.options.dontsave) {
+          if (relatedType.options && relatedType.options.queryInverse) {
             delete obj[field];
             return;
           }
@@ -347,11 +347,11 @@ exports.setSchema = function (schema) {
           var relationOptions = {};
           if (typeof relatedType !== 'string') {
             relationOptions = relatedType.options || {};
-            if (relationOptions.dontsave) {
-              delete obj[field];
-            }
             if (relationOptions.async) {
               return;
+            }
+            if (relationOptions.queryInverse) {
+              delete obj[field];
             }
             relatedType = relatedType.type;
           }
@@ -376,8 +376,8 @@ exports.setSchema = function (schema) {
             }
           } else { // hasMany
             var relatedIdsPromise;
-            if (relationOptions.dontsave) {
-              relatedIdsPromise = db.rel.findHasMany(relatedType, relationOptions.inverse, obj._id, {include_docs: false}).then(
+            if (relationOptions.queryInverse) {
+              relatedIdsPromise = db.rel.findHasMany(relatedType, relationOptions.queryInverse, obj._id, {include_docs: false}).then(
                 function(data) {
                     return data.docs.map(function(doc) {
                         return doc._id;
