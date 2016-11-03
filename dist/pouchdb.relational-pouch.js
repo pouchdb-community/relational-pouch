@@ -377,7 +377,7 @@ exports.setSchema = function (schema) {
           } else { // hasMany
             var relatedIdsPromise;
             if (relationOptions.queryInverse) {
-              relatedIdsPromise = db.rel.findHasMany(relatedType, relationOptions.queryInverse, obj._id, {include_docs: false}).then(
+              relatedIdsPromise = db.rel.findHasMany(relatedType, relationOptions.queryInverse, obj.id, {include_docs: false}).then(
                 function(data) {
                     return data.docs.map(function(doc) {
                         return doc._id;
