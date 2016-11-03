@@ -396,10 +396,10 @@ exports.setSchema = function (schema) {
               return;
             }
             
-            var relatedIdsPromise = extend(true, [], obj[field]);
-            
+            var relatedIds = extend(true, [], obj[field]);
             if (typeof relatedIds !== 'undefined' && relatedIds.length) {
-              subTasks.push(relatedIdsPromise.then(function (relatedIds) {
+              subTasks.push(Promise.resolve().then(function () {
+
                 // filter out all ids that are already in the foundObjects
                 for (var i = relatedIds.length - 1; i >= 0; i--) {
                   var relatedId = relatedIds[i];
@@ -421,7 +421,7 @@ exports.setSchema = function (schema) {
                   };
                 }
               }));
-            };
+            }
           }
         });
         return Promise.all(subTasks);
