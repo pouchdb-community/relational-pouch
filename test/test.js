@@ -34,7 +34,16 @@ function tests(dbName, dbType) {
     return db;
   });
   afterEach(function () {
-    return db.destroy();
+    return db.getIndexes().then(function(data) {
+      var deleteIndexPromises = data.indexes.map(function(index) {
+          return index.ddoc ? (db.deleteIndex(index)) : (Promise.resolve());
+      	});
+      return Promise.all(deleteIndexPromises);
+    }).catch(function() {
+    	//may fail on http
+    }).then(function() {
+    	return db.destroy();
+    });
   });
 
   describe(dbType + ': basic tests', function () {
@@ -1293,7 +1302,194 @@ function tests(dbName, dbType) {
         });
       });
     });
+    
+    if (dbType === 'local') { //pouchdb-find only supported on cloudant and couch >= 2.0
+    it('does parseRelDocs', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            'books': {hasMany: { type: 'book'}}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            'author': {belongsTo: 'author'}
+          }
+        }
+      ]);
 
+      return db.createIndex({index: { fields: ['data.name'] }}).then(function() {
+      	return db.rel.save('author', {
+          name: 'Stephen King',
+          id: 19,
+          books: [1]
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'It',
+          id: 1,
+          author: 19
+        });
+      }).then(function () {
+      	//not a rel.find
+        return db.find({selector: {'data.name': 'Stephen King'}}).then(function(findRes) {
+        	return db.rel.parseRelDocs('author', findRes.docs);
+        });
+      }).then(function (res) {
+        ['authors', 'books'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "id": 19,
+              "books": [1]
+            }
+          ],
+          "books": [
+            {
+              "title": "It",
+              "id": 1,
+              author: 19
+            }
+          ]
+        });
+      });
+    });
+    
+    it('does one-to-many without saving hasMany side', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+            'books': {hasMany: { type: 'book', options: {queryInverse: 'author'}}}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            'author': {belongsTo: 'author'}
+          }
+        }
+      ]);
+
+      return db.createIndex({index: { fields: ['data.author', '_id'] }}).then(function() {
+      	return db.rel.save('author', {
+          name: 'Stephen King',
+          id: 19,
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'It',
+          id: 1,
+          author: 19
+        });
+      }).then(function () {
+        return db.rel.find('author');
+      }).then(function (res) {
+        ['authors', 'books'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "id": 19
+            }
+          ],
+          "books": [
+            {
+              "title": "It",
+              "id": 1,
+              author: 19
+            }
+          ]
+        });
+      });
+    });
+    
+    it('does findHasMany', function () {
+      db.setSchema([
+        {
+          singular: 'author',
+          plural: 'authors',
+          relations: {
+          	//omit relation should also work
+            'books': {hasMany: { type: 'book', options: {async: true, queryInverse: 'author'}}}
+          }
+        },
+        {
+          singular: 'book',
+          plural: 'books',
+          relations: {
+            'author': {belongsTo: { type: 'author', options: {async: true}}}
+          }
+        }
+      ]);
+
+      return db.createIndex({index: { fields: ['data.author', '_id'] }}).then(function() {
+      	return db.rel.save('author', {
+          name: 'Stephen King',
+          id: 19,
+        });
+      }).then(function () {
+        return db.rel.save('book', {
+          title: 'It',
+          id: 1,
+          author: 19
+        });
+      }).then(function () {
+        return db.rel.find('author');
+      }).then(function (res) {
+        ['authors'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "authors": [
+            {
+              "name": "Stephen King",
+              "id": 19
+            }
+          ]
+        });
+        
+        return db.rel.findHasMany('book', 'author', 19);
+      }).then(function(res) {
+      	['books'].forEach(function (type) {
+          res[type].forEach(function (obj) {
+            obj.rev.should.be.a('string');
+            delete obj.rev;
+          });
+        });
+        res.should.deep.equal({
+          "books": [
+            {
+              "title": "It",
+              "id": 1,
+              author: 19
+            }
+          ]
+        });
+      });
+    });
+    }
+	
     it('does many-to-many with several entities', function () {
       db.setSchema([
         {
