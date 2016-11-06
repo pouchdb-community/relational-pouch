@@ -319,11 +319,11 @@ exports.setSchema = function (schema) {
   }
   
   function _parseAlldocs(type, foundObjects, pouchRes) {
-  	return _parseRelDocs(type, foundObjects, pouchRes.rows.map(function (row) {
-        if (row.doc && !row.value.deleted) {
-          return row.doc;
-        }
-      }));
+  	return _parseRelDocs(type, foundObjects, pouchRes.rows.filter(function (row) {
+      return row.doc && !row.value.deleted;
+    }).map(function (row) {
+      return row.doc;
+    }));
   }
   
   function parseRelDocs(type, pouchDocs) {
