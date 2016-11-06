@@ -89,17 +89,6 @@ function createError(str) {
   return err;
 }
 
-function lexCompare(a, b) {
-  // This always seems to be sorted in the tests,
-  // but I like to be sure.
-  /* istanbul ignore else */
-  if (a.id < b.id) {
-    return -1;
-  } else {
-    return 1;
-  }
-}
-
 var MAX_INT_LENGTH = 16; // max int in JS is 9007199254740992
 var TYPE_UNDEF = '0';
 var TYPE_NUM = '1';
@@ -326,7 +315,7 @@ exports.setSchema = function (schema) {
       opts.key = serialize(typeInfo.documentType, idOrIds);
     }
     
-    return db.allDocs(opts).then(_parseAlldocs.bind(this, type, foundObjects));
+    return db.allDocs(opts).then(_parseAlldocs.bind(db, type, foundObjects));
   }
   
   function _parseAlldocs(type, foundObjects, pouchRes) {
@@ -392,7 +381,9 @@ exports.setSchema = function (schema) {
             }
           } else { // hasMany
             if (relationOptions.queryInverse) {
-              subTasks.push(_findHasMany(relatedType, relationOptions.queryInverse, obj.id, foundObjects).then(function (res) { return; }));
+              subTasks.push(_findHasMany(relatedType, relationOptions.queryInverse,
+                                         obj.id, foundObjects)
+                            .then(function () { return; }));
               return;
             }
             
