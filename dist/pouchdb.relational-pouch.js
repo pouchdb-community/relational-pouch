@@ -89,17 +89,6 @@ function createError(str) {
   return err;
 }
 
-function lexCompare(a, b) {
-  // This always seems to be sorted in the tests,
-  // but I like to be sure.
-  /* istanbul ignore else */
-  if (a.id < b.id) {
-    return -1;
-  } else {
-    return 1;
-  }
-}
-
 var MAX_INT_LENGTH = 16; // max int in JS is 9007199254740992
 var TYPE_UNDEF = '0';
 var TYPE_NUM = '1';
@@ -210,6 +199,11 @@ exports.setSchema = function (schema) {
             obj[field] = obj[field].id;
           }
         } else { // hasMany
+          var relatedType = relationDef[relationType];
+          if (relatedType.options && relatedType.options.queryInverse) {
+            delete obj[field];
+            return;
+          }
           if (obj[field]) {
             var dependents = obj[field].map(function (dependent) {
               if (dependent && typeof dependent.id !== 'undefined') {
@@ -320,16 +314,32 @@ exports.setSchema = function (schema) {
     // find by single id
       opts.key = serialize(typeInfo.documentType, idOrIds);
     }
-
-    if (!foundObjects.has(type)) {
+    
+    return db.allDocs(opts).then(_parseAlldocs.bind(db, type, foundObjects));
+  }
+  
+  function _parseAlldocs(type, foundObjects, pouchRes) {
+  	return _parseRelDocs(type, foundObjects, pouchRes.rows.filter(function (row) {
+      return row.doc && !row.value.deleted;
+    }).map(function (row) {
+      return row.doc;
+    }));
+  }
+  
+  function parseRelDocs(type, pouchDocs) {
+  	return _parseRelDocs(type, new collections.Map(), pouchDocs);
+  }
+  
+  function _parseRelDocs(type, foundObjects, pouchDocs) {
+  	var typeInfo = getTypeInfo(type);
+  	
+  	if (!foundObjects.has(type)) {
       foundObjects.set(type, new collections.Map());
     }
-
-    return db.allDocs(opts).then(function (pouchRes) {
-      var tasks = pouchRes.rows.filter(function (row) {
-        return row.doc && !row.value.deleted;
-      }).map(function (row) {
-        var obj = fromRawDoc(row.doc);
+    
+  	return Promise.resolve().then(function() {
+      var tasks = pouchDocs.map(function (doc) {
+        var obj = fromRawDoc(doc);
 
         foundObjects.get(type).set(JSON.stringify(obj.id), obj);
 
@@ -339,10 +349,14 @@ exports.setSchema = function (schema) {
           var relationDef = typeInfo.relations[field];
           var relationType = Object.keys(relationDef)[0];
           var relatedType = relationDef[relationType];
+          var relationOptions = {};
           if (typeof relatedType !== 'string') {
-            var relationOptions = relatedType.options;
-            if (relationOptions && relationOptions.async) {
+            relationOptions = relatedType.options || {};
+            if (relationOptions.async) {
               return;
+            }
+            if (relationOptions.queryInverse) {
+              delete obj[field];
             }
             relatedType = relatedType.type;
           }
@@ -366,6 +380,13 @@ exports.setSchema = function (schema) {
               }));
             }
           } else { // hasMany
+            if (relationOptions.queryInverse) {
+              subTasks.push(_findHasMany(relatedType, relationOptions.queryInverse,
+                                         obj.id, foundObjects)
+                            .then(function () { return; }));
+              return;
+            }
+            
             var relatedIds = extend(true, [], obj[field]);
             if (typeof relatedIds !== 'undefined' && relatedIds.length) {
               subTasks.push(Promise.resolve().then(function () {
@@ -421,7 +442,7 @@ exports.setSchema = function (schema) {
           found.forEach(function (obj) {
             list.push(obj);
           });
-          list.sort(lexCompare);
+          //list.sort(lexCompare);
         });
         return res;
       });
@@ -476,7 +497,26 @@ exports.setSchema = function (schema) {
       return _find(getTypeInfo(type).singular, idOrIds, new collections.Map());
     });
   }
-
+  
+  function _findHasMany(type, belongsToKey, belongsToId, foundObjects) {
+  	var selector = {
+            '_id': {
+                '$gt': makeDocID({type: type}),
+                '$lt': makeDocID({type: type, id: {}})
+            }
+        };
+    selector['data.' + belongsToKey] = belongsToId;
+    
+    //only use opts for return ids or whole doc? returning normal documents is not really good
+    return db.find({ selector: selector }).then(function(findRes) {
+    	return _parseRelDocs(type, foundObjects, findRes.docs);
+    });
+  }
+  
+  function findHasMany(type, belongsToKey, belongsToId) {
+    return _findHasMany(type, belongsToKey, belongsToId, new collections.Map());
+  }
+  
   function del(type, obj) {
     return Promise.resolve().then(function () {
       return _del(type, obj);
@@ -517,12 +557,14 @@ exports.setSchema = function (schema) {
   db.rel = {
     save: save,
     find: find,
+    findHasMany: findHasMany,
     del: del,
     getAttachment: getAttachment,
     putAttachment: putAttachment,
     removeAttachment: removeAttachment,
     parseDocID: parseDocID,
-    makeDocID: makeDocID
+    makeDocID: makeDocID,
+    parseRelDocs: parseRelDocs
   };
 };
 
@@ -627,7 +669,7 @@ exports.Promise = Promise;
 exports.extend = require('pouchdb-extend');
 
 }).call(this,require('_process'))
-},{"_process":10,"inherits":6,"pouchdb-extend":7,"pouchdb-promise":8}],4:[function(require,module,exports){
+},{"_process":5,"inherits":6,"pouchdb-extend":7,"pouchdb-promise":8}],4:[function(require,module,exports){
 "use strict";
 
 // BEGIN Math.uuid.js
@@ -714,78 +756,187 @@ module.exports = uuid;
 
 
 },{}],5:[function(require,module,exports){
-(function (global){
-'use strict';
-var Mutation = global.MutationObserver || global.WebKitMutationObserver;
+// shim for using process in browser
+var process = module.exports = {};
 
-var scheduleDrain;
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
 
-{
-  if (Mutation) {
-    var called = 0;
-    var observer = new Mutation(nextTick);
-    var element = global.document.createTextNode('');
-    observer.observe(element, {
-      characterData: true
-    });
-    scheduleDrain = function () {
-      element.data = (called = ++called % 2);
-    };
-  } else if (!global.setImmediate && typeof global.MessageChannel !== 'undefined') {
-    var channel = new global.MessageChannel();
-    channel.port1.onmessage = nextTick;
-    scheduleDrain = function () {
-      channel.port2.postMessage(0);
-    };
-  } else if ('document' in global && 'onreadystatechange' in global.document.createElement('script')) {
-    scheduleDrain = function () {
+var cachedSetTimeout;
+var cachedClearTimeout;
 
-      // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
-      // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
-      var scriptEl = global.document.createElement('script');
-      scriptEl.onreadystatechange = function () {
-        nextTick();
-
-        scriptEl.onreadystatechange = null;
-        scriptEl.parentNode.removeChild(scriptEl);
-        scriptEl = null;
-      };
-      global.document.documentElement.appendChild(scriptEl);
-    };
-  } else {
-    scheduleDrain = function () {
-      setTimeout(nextTick, 0);
-    };
-  }
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
 }
-
-var draining;
-var queue = [];
-//named nextTick for less confusing stack traces
-function nextTick() {
-  draining = true;
-  var i, oldQueue;
-  var len = queue.length;
-  while (len) {
-    oldQueue = queue;
-    queue = [];
-    i = -1;
-    while (++i < len) {
-      oldQueue[i]();
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
     }
-    len = queue.length;
-  }
-  draining = false;
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
 }
 
-module.exports = immediate;
-function immediate(task) {
-  if (queue.push(task) === 1 && !draining) {
-    scheduleDrain();
-  }
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
 }
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
 },{}],6:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
@@ -1258,168 +1409,79 @@ function race(iterable) {
   }
 }
 
-},{"immediate":5}],10:[function(require,module,exports){
-// shim for using process in browser
-var process = module.exports = {};
+},{"immediate":10}],10:[function(require,module,exports){
+(function (global){
+'use strict';
+var Mutation = global.MutationObserver || global.WebKitMutationObserver;
 
-// cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
+var scheduleDrain;
 
-var cachedSetTimeout;
-var cachedClearTimeout;
+{
+  if (Mutation) {
+    var called = 0;
+    var observer = new Mutation(nextTick);
+    var element = global.document.createTextNode('');
+    observer.observe(element, {
+      characterData: true
+    });
+    scheduleDrain = function () {
+      element.data = (called = ++called % 2);
+    };
+  } else if (!global.setImmediate && typeof global.MessageChannel !== 'undefined') {
+    var channel = new global.MessageChannel();
+    channel.port1.onmessage = nextTick;
+    scheduleDrain = function () {
+      channel.port2.postMessage(0);
+    };
+  } else if ('document' in global && 'onreadystatechange' in global.document.createElement('script')) {
+    scheduleDrain = function () {
 
-(function () {
-    try {
-        cachedSetTimeout = setTimeout;
-    } catch (e) {
-        cachedSetTimeout = function () {
-            throw new Error('setTimeout is not defined');
-        }
-    }
-    try {
-        cachedClearTimeout = clearTimeout;
-    } catch (e) {
-        cachedClearTimeout = function () {
-            throw new Error('clearTimeout is not defined');
-        }
-    }
-} ())
-function runTimeout(fun) {
-    if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
-        return setTimeout(fun, 0);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedSetTimeout(fun, 0);
-    } catch(e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-            return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-            return cachedSetTimeout.call(this, fun, 0);
-        }
-    }
+      // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
+      // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
+      var scriptEl = global.document.createElement('script');
+      scriptEl.onreadystatechange = function () {
+        nextTick();
 
-
+        scriptEl.onreadystatechange = null;
+        scriptEl.parentNode.removeChild(scriptEl);
+        scriptEl = null;
+      };
+      global.document.documentElement.appendChild(scriptEl);
+    };
+  } else {
+    scheduleDrain = function () {
+      setTimeout(nextTick, 0);
+    };
+  }
 }
-function runClearTimeout(marker) {
-    if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
-        return clearTimeout(marker);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedClearTimeout(marker);
-    } catch (e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-            return cachedClearTimeout.call(null, marker);
-        } catch (e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-            return cachedClearTimeout.call(this, marker);
-        }
-    }
 
-
-
-}
+var draining;
 var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    if (!draining || !currentQueue) {
-        return;
+//named nextTick for less confusing stack traces
+function nextTick() {
+  draining = true;
+  var i, oldQueue;
+  var len = queue.length;
+  while (len) {
+    oldQueue = queue;
+    queue = [];
+    i = -1;
+    while (++i < len) {
+      oldQueue[i]();
     }
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
+    len = queue.length;
+  }
+  draining = false;
 }
 
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = runTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    runClearTimeout(timeout);
+module.exports = immediate;
+function immediate(task) {
+  if (queue.push(task) === 1 && !draining) {
+    scheduleDrain();
+  }
 }
 
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        runTimeout(drainQueue);
-    }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
-
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],11:[function(require,module,exports){
 "use strict"
 

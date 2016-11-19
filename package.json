@@ -38,6 +38,7 @@
     "lie": "^3.1.0",
     "pouchdb-extend": "^0.1.0",
     "pouchdb-promise": "5.4.5",
+    "pouchdb-find": "^0.10.2",
     "uniq": "^1.0.1"
   },
   "devDependencies": {
