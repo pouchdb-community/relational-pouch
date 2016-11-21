@@ -70,11 +70,14 @@ API
 * [`db.rel.removeAttachment(type, object, attachmentId)`](#dbrelremoveattachmenttype-object-attachmentid)
 * [`db.rel.parseDocID(docID)`](#dbrelparsedociddocid)
 * [`db.rel.makeDocID(docID)`](#dbrelmakedocidparsedid)
+* [`db.rel.parseRelDocs(type, pouchDocs)`](#dbrelparsereldocstype-pouchdocs)
+* [`db.rel.findHasMany(type, type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid)
 * [Managing relationships](#managing-relationships)
   * [One-to-one](#one-to-one-relationships)
   * [Many-to-one](#many-to-one-relationships)
   * [Many-to-many](#many-to-many-relationships)
   * [Async relationships](#async-relationships)
+  * [Don't save hasMany](#dont-save-hasmany)
   * [Advanced](#advanced)
 * [Managing revisions ("rev")](#managing-revisions-rev)
 
@@ -482,6 +485,44 @@ db.get(_id).then(function (doc) {
 });
 ```
 
+### db.rel.parseRelDocs(type, pouchDocs)
+
+Parses pouch documents that should be in this schema. Loads extra relations if needed.
+This function is useful when you are loading data from db.find for example, instead of from db.rel.
+
+Example:
+```js
+db.find(selector).then(function (data) {
+  return db.rel.parseRelDocs(type, data.docs);
+});
+```
+
+Returns data as [`db.rel.find(type)`](#dbrelfindtype) would return it.
+
+It requires a type parameter, which could be gotten from the id of the first document using [`db.rel.parseDocID(docID)`](#dbrelparsedociddocid), but most of the time you will know which type you are trying to find with the db.find call.
+
+### db.rel.findHasMany(type, belongsToKey, belongsToId)
+
+Uses db.find to build a selector that searches for the documents of type `type` that have a value of `belongsToId` set in the field `belongsToKey`.
+This can be used in a higher level API to use asynchronous hasMany relations that don't store the hasMany side.
+
+Example:
+```js
+db.rel.findHasMany('post', 'author', '1');
+```
+
+Returns a Promise that will resolve to an array of posts that have author 1 as [`db.rel.find(type)`](#dbrelfindtype) would.
+
+Since db.find requires the use of indexes, you need to setup an index for this extra lookup. The fields required by this index are `_id` and the field specified in the `belongsToKey`, prefixed with `data.`. The `_id` field is used to filter the related items by type. Without it another type with the same field could also be returned.
+So the example above would give: 
+
+```
+db.createIndex({index: { fields: ['data.author', '_id'] }});	
+```
+
+For performance reasons the queried field is used first here. As this is to be expected to return a smaller set that filtering on type first.
+If your database however has a lot more document types that has data.author fields too, you may find that switching the order and using `id` as the first filter will give faster results.
+
 ### Managing relationships
 
 Entity relationships are encoded using the [Ember Data Model](http://andycrum.github.io/ember-data-model-maker/) format, which is a slight simplification of [json:api](http://jsonapi.org/).
@@ -846,6 +887,37 @@ Result:
 This can cut down on your request size, if you don't need the full book information when you fetch authors.
 
 Thanks to [Lars-Jørgen Kristiansen](https://github.com/iUtvikler) for implementing this feature!
+
+#### Don't save hasMany
+
+By default relational-pouch will store the child ids of an Many-to-one relationship as a property on the many side (the parent). This can lead to extra conflicts, since this goes against the normal "documents are changes" way that Couch works best. Edits to documents are best to be self contained, and changing a parent document because a child is inserted can result in problems with multiple users.
+
+A way to fix this is to specify to relational-pouch that the parent actually does not store this array of children. But instead relational-pouch should use a db.find query to search for them.
+
+```js
+db.setSchema([
+  {
+    singular: 'author',
+    plural: 'authors',
+    relations: {
+      books: {hasMany: {type: 'book', options: {queryInverse: 'author'}}}
+    }
+  },
+  {
+    singular: 'book',
+    plural: 'books',
+    relations: {
+      author: {belongsTo: 'author'}
+    }
+  }
+]);
+```
+
+This will tell relational-pouch to not save the book ids on the author, and use a query using db.find to look for the related books.
+Since this uses [`db.rel.findHasMany(type, type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid) internally, you also need an index as specified there, where `belongsToKey` is the field specified in the `queryInverse` option.
+
+For async relations this queryInverse will not work at this moment and the child id array will not be present on the result. You can use the [`db.rel.findHasMany(type, type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid) for this scenario instead.
+If you also don't give relational-pouch the child ids when calling db.rel.save you could also completely remove the hasMany side of the relation from the schema .
 
 #### Advanced
 
