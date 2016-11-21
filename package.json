@@ -25,7 +25,7 @@
     "test-browser": "node ./bin/test-browser.js",
     "jshint": "jshint -c .jshintrc lib test/test.js",
     "test": "npm run jshint && bash ./bin/run-test.sh",
-    "build": "mkdir -p dist && browserify -t es3ify -s RelationalPouch lib/index.js -o dist/pouchdb.relational-pouch.js && npm run min",
+    "build": "mkdirp dist && browserify -t es3ify -s RelationalPouch lib/index.js -o dist/pouchdb.relational-pouch.js && npm run min",
     "min": "uglifyjs dist/pouchdb.relational-pouch.js -mc > dist/pouchdb.relational-pouch.min.js",
     "dev": "browserify test/test.js > test/test-bundle.js && npm run dev-server",
     "dev-server": "node ./bin/dev-server.js",
@@ -58,7 +58,8 @@
     "selenium-standalone": "^5.5.0",
     "uglify-js": "^2.4.13",
     "watchify": "~3.7.0",
-    "wd": "^0.4.0"
+    "wd": "^0.4.0",
+    "mkdirp": "^0.5.1"
   },
   "files": ["lib", "dist"]
 }
