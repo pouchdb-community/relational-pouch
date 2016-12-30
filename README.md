@@ -59,7 +59,8 @@ API
 ### Summary
 
 * [`db.setSchema(schema)`](#dbsetschemaschema)
-* [`db.rel.save(type, object)`](#dbrelsavetype-object)
+* [`db.rel.save(type, object, isDel)`](#dbrelsavetype-object)
+* [`db.rel.saveAll(type, json)`](#dbrelsavealltype-json)
 * [`db.rel.find(type)`](#dbrelfindtype)
 * [`db.rel.find(type, id)`](#dbrelfindtype-id)
 * [`db.rel.find(type, ids)`](#dbrelfindtype-ids)
@@ -149,7 +150,7 @@ Here, when you load a "postSummary", it will return the same core record as "pos
 
 Be careful when using this feature — it is probably best to treat a type declaring a documentType as read-only. Do all creates/updates via the main type.
 
-### db.rel.save(type, object)
+### db.rel.save(type, object, isdel)
 
 Save an object with a particular type. This returns a Promise.
 
@@ -157,7 +158,7 @@ Save an object with a particular type. This returns a Promise.
 db.rel.save('post', {
   title: 'Rails is Omakase',
   text: 'There are a lot of a-la-carte software...'
-});
+}, false);
 ```
 
 Result:
@@ -203,6 +204,85 @@ Result:
 You'll notice the special field `rev`, which is a revision identifier. That'll come into play later.
 
 `id` and `rev` are reserved fields when you use this plugin. You shouldn't try to use them for something else. An `id` can be any string or integer.
+
+
+
+if you set the 'isDel' to true, then the function will save the object with  _deleted =  true. Which is the same as a delete.
+This way you could implement your conflicts management with the same function.
+
+### db.rel.saveAll(type, json)
+
+Save a json value with a particular type. This returns a Promise.
+
+```js
+db.rel.saveAll('wheels', {[
+                          {
+                            "label" : "skate",
+                          },
+                          {
+                            "label" : "bike",
+                          }
+                          },
+                          {
+                            "label" : "moto",
+                          }
+                        ]);
+```
+
+Result:
+
+```js
+{
+  "wheels": [
+    {
+      "label": "skate",
+      "id": "wheels_1_0000000000000001",
+      "rev": "1-84df2c73028e5b8d0ae1cbb401959370"
+    },
+    {
+      "label": "bike",
+      "id": "wheels_1_0000000000000002",
+      "rev": "1-5d3e0bc94fa750fad747410161a0e22f"
+    }
+    ,
+    {
+      "label": "moto",
+      "id": "wheels_1_0000000000000003",
+      "rev": "1-41c72ebc8cc78910df1818f7cffbd9fa"
+    }
+  ]
+}
+```
+
+If you want, you can specify an `id`. Otherwise an `id` will be created for you.
+
+```js
+db.rel.saveAll('wheels', {
+"label" : "moto",
+  id: 1
+});
+```
+
+Result:
+
+```js
+{
+  "posts": [
+    {
+      "label" : "moto",
+      "id": 1,
+      "rev": "1-0ae315ee597b22cc4b1acf9e0edc35ba"
+    }
+    ...
+  ]
+}
+```
+
+You'll notice the special field `rev`, which is a revision identifier. That'll come into play later.
+
+`id` and `rev` are reserved fields when you use this plugin. You shouldn't try to use them for something else. An `id` can be any string or integer.
+
+
 
 ### db.rel.find(type)
 
