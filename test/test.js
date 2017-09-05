@@ -449,7 +449,7 @@ function tests(dbName, dbType) {
         }
       ]);
 
-      return db.put({ data: { text: 'Oh no' } }, 'post_2_oh').then(function () {
+      return db.put({ data: { text: 'Oh no' }, _id: 'post_2_oh' }).then(function () {
         return db.rel.find('postSummary', 'oh');
       }).then(function (res) {
         delete res.postSummaries[0].rev;
