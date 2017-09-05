@@ -1,11 +1,11 @@
 {
   "name": "relational-pouch",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "PouchDB, relational style",
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/nolanlawson/relational-pouch.git"
+    "url": "git://github.com/pouchdb-community/relational-pouch.git"
   },
   "keywords": [
     "pouch",
@@ -18,7 +18,7 @@
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/nolanlawson/relational-pouch/issues"
+    "url": "https://github.com/pouchdb-community/relational-pouch/issues"
   },
   "scripts": {
     "test-node": "istanbul test ./node_modules/mocha/bin/_mocha test/test.js",

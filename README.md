@@ -1,4 +1,4 @@
-Relational Pouch [![Build Status](https://travis-ci.org/nolanlawson/relational-pouch.svg)](https://travis-ci.org/nolanlawson/relational-pouch)
+Relational Pouch [![Build Status](https://travis-ci.org/pouchdb-community/relational-pouch.svg)](https://travis-ci.org/pouchdb-community/relational-pouch)
 =====
 
 ```js
@@ -24,7 +24,7 @@ This plugin also uses clever tricks to avoid creating secondary indexes. This me
 
 The main goal of this is to provide an API that is as similar to [Ember Data](http://emberjs.com/api/data/) and [json:api](http://jsonapi.org/) as possible, while still being performant and Pouch-like.
 
-This plugin is largely what powers [Ember Pouch](https://github.com/nolanlawson/ember-pouch).
+This plugin is largely what powers [Ember Pouch](https://github.com/pouchdb-community/ember-pouch).
 
 Installation
 ------
@@ -287,7 +287,7 @@ Result:
 }
 ```
 
-If an `id` isn't found, it's simply not returned. Notice that above, there is no object with an `id` of `3`. 
+If an `id` isn't found, it's simply not returned. Notice that above, there is no object with an `id` of `3`.
 
 `find` results are always returned ordered by id. The order of your `ids` array will not necessarily be reflected in the returned array of objects.
 
@@ -511,10 +511,10 @@ db.rel.findHasMany('post', 'author', '1');
 Returns a Promise that will resolve to an array of posts that have author 1 as [`db.rel.find(type)`](#dbrelfindtype) would.
 
 Since db.find requires the use of indexes, you need to setup an index for this extra lookup. The fields required by this index are `_id` and the field specified in the `belongsToKey`, prefixed with `data.`. The `_id` field is used to filter the related items by type. Without it another type with the same field could also be returned.
-So the example above would give: 
+So the example above would give:
 
 ```
-db.createIndex({index: { fields: ['data.author', '_id'] }});	
+db.createIndex({index: { fields: ['data.author', '_id'] }});
 ```
 
 For performance reasons the queried field is used first here. As this is to be expected to return a smaller set that filtering on type first.
