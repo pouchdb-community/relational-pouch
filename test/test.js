@@ -2142,7 +2142,8 @@ function tests(dbName, dbType) {
           return db.rel.parseDocID(change.id);
         });
       }).then(function (res) {
-        res.should.deep.equal([
+        res.should.have.lengthOf(4);
+        res.should.deep.include.members([
           {"type": "author", "id": 19},
           {"type": "book", "id": 1},
           {"type": "book", "id": 2},

@@ -461,16 +461,13 @@ Result is e.g.:
 ### db.rel.makeDocID(parsedID)
 
 Creates a valid `_id` from an object with `type` and `id` properties, such as
-`parseDocID` generates.
+`parseDocID` generates. The format is `<type>_<id type>_<id>`. The `<id type>` depends on the id. If the id is undefined the value is 0, if the id is a number, the value is 1, if the id is a string the value is 2, and if the id is an object the value is 3.
 
 ```js
-db.rel.makeDocID({ "type": "author", "id": 19 });
-```
-
-Returns:
-
-```js
-"author_1_0000000000000019"
+db.rel.makeDocID({ "type": "author", "id": 123 });
+// author_1_0000000000000123
+db.rel.makeDocID({ "type": "author", "id": "onetwothree" });
+// author_2_onetwothree
 ```
 
 Useful if you need to perform operations with the underlying database, e.g.:
