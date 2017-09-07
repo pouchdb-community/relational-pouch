@@ -318,6 +318,14 @@ exports.setSchema = function (schema) {
     return db.allDocs(opts).then(_parseAlldocs.bind(db, type, foundObjects));
   }
   
+  function isDeleted(type, id) {
+    var typeInfo = getTypeInfo(type);
+    
+    return db.get(serialize(typeInfo.documentType, id))
+      .then(function (doc) { return doc._deleted; })[
+      "catch"](function (err) { return err.reason === "deleted"; });
+  }
+  
   function _parseAlldocs(type, foundObjects, pouchRes) {
   	return _parseRelDocs(type, foundObjects, pouchRes.rows.filter(function (row) {
       return row.doc && !row.value.deleted;
@@ -564,7 +572,8 @@ exports.setSchema = function (schema) {
     removeAttachment: removeAttachment,
     parseDocID: parseDocID,
     makeDocID: makeDocID,
-    parseRelDocs: parseRelDocs
+    parseRelDocs: parseRelDocs,
+    isDeleted: isDeleted
   };
 };
 
