@@ -318,12 +318,13 @@ exports.setSchema = function (schema) {
     return db.allDocs(opts).then(_parseAlldocs.bind(db, type, foundObjects));
   }
   
+  //true = deleted, false = exists, null = not in database
   function isDeleted(type, id) {
     var typeInfo = getTypeInfo(type);
     
     return db.get(serialize(typeInfo.documentType, id))
-      .then(function (doc) { return doc._deleted; })[
-      "catch"](function (err) { return err.reason === "deleted"; });
+      .then(function (doc) { return !!doc._deleted; })[
+      "catch"](function (err) { return err.reason === "deleted" ? true : null; });
   }
   
   function _parseAlldocs(type, foundObjects, pouchRes) {

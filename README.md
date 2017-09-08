@@ -72,6 +72,7 @@ API
 * [`db.rel.makeDocID(docID)`](#dbrelmakedocidparsedid)
 * [`db.rel.parseRelDocs(type, pouchDocs)`](#dbrelparsereldocstype-pouchdocs)
 * [`db.rel.findHasMany(type, type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid)
+* [`db.rel.isDeleted(type, id)](#dbrelisdeletedtype-id)
 * [Managing relationships](#managing-relationships)
   * [One-to-one](#one-to-one-relationships)
   * [Many-to-one](#many-to-one-relationships)
@@ -481,6 +482,10 @@ db.get(_id).then(function (doc) {
   return doc.data;
 });
 ```
+
+### db.rel.isDeleted(type, id)
+
+Returns a Promise that resolves to `true` if document is deleted, `false` if it still exists and `null` if it is not in the database
 
 ### db.rel.parseRelDocs(type, pouchDocs)
 
