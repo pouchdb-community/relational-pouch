@@ -2310,5 +2310,34 @@ function tests(dbName, dbType) {
         });
       });
     });
+  
+  it('isDeleted should work', function() {
+    db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+    
+    return db.rel.isDeleted('post', 1).then(function(deleted) {
+      should.equal(deleted, null);
+    }).then(function() {
+      return db.rel.save('post', {
+        title: 'Rails is Omakase',
+        text: 'There are a lot of ala carte blah blah blah',
+        id: 1
+      });
+    }).then(function() {
+      return db.rel.isDeleted('post', 1);
+    }).then(function(deleted) {
+      false.should.equal(deleted);
+    }).then(function() {
+      return db.rel.find('post', 1);
+    }).then(function(res) {
+      return db.rel.del('post', res.posts[0]);
+    }).then(function() {
+      return db.rel.isDeleted('post', 1);
+    }).then(function(deleted) {
+      true.should.equal(deleted);
+    });
+  });
 
 }
