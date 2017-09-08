@@ -72,7 +72,7 @@ API
 * [`db.rel.makeDocID(docID)`](#dbrelmakedocidparsedid)
 * [`db.rel.parseRelDocs(type, pouchDocs)`](#dbrelparsereldocstype-pouchdocs)
 * [`db.rel.findHasMany(type, type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid)
-* [`db.rel.isDeleted(type, id)](#dbrelisdeletedtype-id)
+* [`db.rel.isDeleted(type, id)`](#dbrelisdeletedtype-id)
 * [Managing relationships](#managing-relationships)
   * [One-to-one](#one-to-one-relationships)
   * [Many-to-one](#many-to-one-relationships)
