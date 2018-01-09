@@ -39,6 +39,7 @@ Then include it after `pouchdb.js` in your HTML page:
 
 ```html
 <script src="pouchdb.js"></script>
+<script src="pouchdb.find.js"></script>
 <script src="pouchdb.relational-pouch.js"></script>
 ```
 
@@ -51,6 +52,7 @@ And then attach it to the `PouchDB` object:
 ```js
 var PouchDB = require('pouchdb');
 PouchDB.plugin(require('relational-pouch'));
+PouchDB.plugin(require('pouchdb-find'));
 ```
 
 API
