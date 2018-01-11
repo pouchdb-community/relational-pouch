@@ -7,7 +7,8 @@ var Pouch = require('pouchdb-memory');
 // your plugin goes here
 //
 var plugin = require('../lib');
-Pouch.plugin(plugin);
+Pouch.plugin(plugin)
+  .plugin(require('pouchdb-find'));
 
 var chai = require('chai');
 chai.use(require("chai-as-promised"));
@@ -1302,7 +1303,7 @@ function tests(dbName, dbType) {
         });
       });
     });
-    
+
     if (dbType === 'local') { //pouchdb-find only supported on cloudant and couch >= 2.0
     it('does parseRelDocs', function () {
       db.setSchema([
@@ -1364,7 +1365,7 @@ function tests(dbName, dbType) {
         });
       });
     });
-    
+
     it('does one-to-many without saving hasMany side', function () {
       db.setSchema([
         {
@@ -1420,7 +1421,7 @@ function tests(dbName, dbType) {
         });
       });
     });
-    
+
     it('does findHasMany', function () {
       db.setSchema([
         {
@@ -1468,7 +1469,7 @@ function tests(dbName, dbType) {
             }
           ]
         });
-        
+
         return db.rel.findHasMany('book', 'author', 19);
       }).then(function(res) {
       	['books'].forEach(function (type) {
@@ -1489,7 +1490,7 @@ function tests(dbName, dbType) {
       });
     });
     }
-	
+
     it('does many-to-many with several entities', function () {
       db.setSchema([
         {
@@ -2310,13 +2311,13 @@ function tests(dbName, dbType) {
         });
       });
     });
-  
+
   it('isDeleted should work', function() {
     db.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
-    
+
     return db.rel.isDeleted('post', 1).then(function(deleted) {
       should.equal(deleted, null);
     }).then(function() {
