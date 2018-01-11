@@ -57,7 +57,7 @@
     "pouchdb-find": "^6.4.1",
     "pouchdb-memory": "^6.0.0",
     "request": "^2.83.0",
-    "sauce-connect-launcher": "^1.2.3",
+    "sauce-connect-launcher": "^0.15.1",
     "selenium-standalone": "^5.5.0",
     "uglify-js": "^3.3.5",
     "watchify": "~3.9.0",
