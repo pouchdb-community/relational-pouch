@@ -52,7 +52,7 @@
     "http-server": "~0.10.0",
     "istanbul": "^0.4.5",
     "jshint": "2.9.5",
-    "mocha": "~4.1.0",
+    "mocha": "~3.0",
     "phantomjs": "^2.1.7",
     "pouchdb-find": "^6.4.1",
     "pouchdb-memory": "^6.0.0",
