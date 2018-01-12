@@ -73,7 +73,7 @@ API
 * [`db.rel.parseDocID(docID)`](#dbrelparsedociddocid)
 * [`db.rel.makeDocID(docID)`](#dbrelmakedocidparsedid)
 * [`db.rel.parseRelDocs(type, pouchDocs)`](#dbrelparsereldocstype-pouchdocs)
-* [`db.rel.findHasMany(type, type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid)
+* [`db.rel.findHasMany(type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid)
 * [`db.rel.isDeleted(type, id)`](#dbrelisdeletedtype-id)
 * [Managing relationships](#managing-relationships)
   * [One-to-one](#one-to-one-relationships)
@@ -918,9 +918,9 @@ db.setSchema([
 ```
 
 This will tell relational-pouch to not save the book ids on the author, and use a query using db.find to look for the related books.
-Since this uses [`db.rel.findHasMany(type, type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid) internally, you also need an index as specified there, where `belongsToKey` is the field specified in the `queryInverse` option.
+Since this uses [`db.rel.findHasMany(type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid) internally, you also need an index as specified there, where `belongsToKey` is the field specified in the `queryInverse` option.
 
-For async relations this queryInverse will not work at this moment and the child id array will not be present on the result. You can use the [`db.rel.findHasMany(type, type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid) for this scenario instead.
+For async relations this queryInverse will not work at this moment and the child id array will not be present on the result. You can use the [`db.rel.findHasMany(type, belongsToKey, belongsToId)`](#dbrelfindhasmanytype-belongstokey-belongstoid) for this scenario instead.
 If you also don't give relational-pouch the child ids when calling db.rel.save you could also completely remove the hasMany side of the relation from the schema .
 
 #### Advanced
