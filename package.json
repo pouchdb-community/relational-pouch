@@ -1,6 +1,6 @@
 {
   "name": "relational-pouch",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "description": "PouchDB, relational style",
   "main": "lib/index.js",
   "repository": {
@@ -58,7 +58,7 @@
     "pouchdb-memory": "^6.0.0",
     "request": "^2.83.0",
     "sauce-connect-launcher": "^1.2.3",
-    "selenium-standalone": "^6.12.0",
+    "selenium-standalone": "6.12.0",
     "uglify-js": "^3.3.5",
     "watchify": "~3.9.0",
     "wd": "^1.5.0",
