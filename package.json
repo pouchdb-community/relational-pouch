@@ -35,7 +35,7 @@
     "argsarray": "0.0.1",
     "es3ify": "^0.2.2",
     "inherits": "~2.0.3",
-    "lie": "^3.1.1",
+    "lie": "^3.3.0",
     "pouchdb-extend": "^0.1.2",
     "pouchdb-promise": "^6.4.2",
     "uniq": "^1.0.1"
