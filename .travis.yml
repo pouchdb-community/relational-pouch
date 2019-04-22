@@ -1,9 +1,9 @@
 language: node_js
 services:
   - couchdb
-sudo: false
+sudo: true
 node_js:
-  - "5"
+  - "6"
 script: npm run $COMMAND
 before_script:
   - "export DISPLAY=:99.0"
