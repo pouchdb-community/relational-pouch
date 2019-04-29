@@ -12,6 +12,7 @@ var testTimeout = 30 * 60 * 1000;
 
 var username = process.env.SAUCE_USERNAME;
 var accessKey = process.env.SAUCE_ACCESS_KEY;
+var SELENIUM_VERSION = process.env.SELENIUM_VERSION || '3.141.0';
 
 // process.env.CLIENT is a colon seperated list of
 // (saucelabs|selenium):browserName:browserVerion:platform
@@ -46,9 +47,9 @@ testUrl += '?';
 testUrl += querystring.stringify(qs);
 
 if (process.env.TRAVIS &&
-    client.browser !== 'firefox' &&
-    client.browser !== 'phantomjs' &&
-    process.env.TRAVIS_SECURE_ENV_VARS === 'false') {
+  client.browser !== 'firefox' &&
+  client.browser !== 'phantomjs' &&
+  process.env.TRAVIS_SECURE_ENV_VARS === 'false') {
   console.error('Not running test, cannot connect to saucelabs');
   process.exit(1);
   return;
@@ -81,13 +82,13 @@ function testComplete(result) {
 
 function startSelenium(callback) {
   // Start selenium
-  var opts = {version: '2.42.0'};
-  selenium.install(opts, function(err) {
+  var opts = { version: SELENIUM_VERSION };
+  selenium.install(opts, function (err) {
     if (err) {
       console.error('Failed to install selenium');
       process.exit(1);
     }
-    selenium.start(opts, function(err, server) {
+    selenium.start(opts, function (err, server) {
       sauceClient = wd.promiseChainRemote();
       callback();
     });
