@@ -1,6 +1,6 @@
 {
   "name": "relational-pouch",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "PouchDB, relational-style",
   "homepage": "https://github.com/pouchdb-community/relational-pouch",
   "authors": [
