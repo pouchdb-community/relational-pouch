@@ -13,37 +13,58 @@ var indexfile = "./test/test.js";
 var dotfile = "./test/.test-bundle.js";
 var outfile = "./test/test-bundle.js";
 var watchify = require("watchify");
-var browserify = require('browserify');
-var b = browserify(indexfile, {
-  cache: {},
-  packageCache: {},
-  plugin: [watchify]
-})
-
-b.on('update', bundle);
-bundle();
+var webpack = require('webpack');
+var path = require('path');
+var b = webpack({
+  target: "web",
+	entry: "./test/test.js",
+	mode: 'development',
+	output: {
+	  path: path.resolve(__dirname, 'tests'),
+	  filename: 'test-bundle.js.js',
+    libraryTarget: 'umd',
+  },
+  plugins: [
+  ],
+  module: {
+    rules: [
+      {
+        test: /\.m?js$/,
+        exclude: /(node_modules|bower_components)/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              ['@babel/preset-env',
+              {
+                "targets": "> 0.25%, not dead",
+                "modules": false,
+              }],
+            ],
+          },
+        }
+      }
+    ]
+  },
+}).watch({}, (error, stats) => {
+  if (error) {
+    console.error(error);
+    return;
+  }
+  
+  if (!stats.hasErrors()) {
+    console.log('Updated');
+    filesWritten = true;
+    checkReady();
+  } else {
+    const info = stats.toJson();
+    console.error(info.errors);
+  }
+});
 
 var filesWritten = false;
 var serverStarted = false;
 var readyCallback;
-
-function bundle() {
-  var wb = b.bundle();
-  wb.on('error', function (err) {
-    console.error(String(err));
-  });
-  wb.on("end", end);
-  wb.pipe(fs.createWriteStream(dotfile));
-
-  function end() {
-    fs.rename(dotfile, outfile, function (err) {
-      if (err) { return console.error(err); }
-      console.log('Updated:', outfile);
-      filesWritten = true;
-      checkReady();
-    });
-  }
-}
 
 function startServers(callback) {
   readyCallback = callback;

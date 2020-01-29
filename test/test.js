@@ -1,14 +1,17 @@
 /*jshint expr:true */
 'use strict';
 
-var Pouch = require('pouchdb-memory');
+var Pouch = require('pouchdb-core')
+  .plugin(require('pouchdb-adapter-memory'))
+  .plugin(require('pouchdb-adapter-http'))
+  .plugin(require('pouchdb-mapreduce'))
+  .plugin(require('pouchdb-find'));
 
 //
 // your plugin goes here
 //
 var plugin = require('../lib');
-Pouch.plugin(plugin)
-  .plugin(require('pouchdb-find'));
+Pouch.plugin(plugin);
 
 var chai = require('chai');
 chai.use(require("chai-as-promised"));
@@ -17,10 +20,9 @@ chai.use(require("chai-as-promised"));
 // more variables you might want
 //
 var should = chai.should(); // var should = chai.should();
-var Promise = require('bluebird'); // var Promise = require('bluebird');
 
 var dbs = 'testdb' + Math.random() +
-    ',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
+    '';//',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
 
 dbs.split(',').forEach(function (db) {
   var dbType = /^http/.test(db) ? 'http' : 'local';
