@@ -21,13 +21,13 @@
     "url": "https://github.com/pouchdb-community/relational-pouch/issues"
   },
   "scripts": {
-    "test-node": "webpack --config webpack.test.node.config && istanbul test ./node_modules/mocha/bin/_mocha test/test-node.js",
+    "test-node": "webpack --config webpack.test.node.config.js && nyc ./node_modules/mocha/bin/_mocha test/test-node.js",
     "test-browser": "node ./bin/test-browser.js",
     "lint": "eslint lib test/test.js",
     "test": "npm run lint && bash ./bin/run-test.sh",
     "build": "webpack --mode=production",
     "dev": "node ./bin/dev-server.js",
-    "coverage": "npm test --coverage && istanbul check-coverage --lines 100 --function 100 --statements 100 --branches 100"
+    "coverage": "npm run test-node --coverage && nyc check-coverage --lines 100 --function 100 --statements 100 --branches 100"
   },
   "dependencies": {
     "argsarray": "0.0.1",
@@ -42,6 +42,7 @@
   "devDependencies": {
     "@babel/core": "^7.8.3",
     "@babel/preset-env": "^7.8.3",
+    "@babel/register": "^7.8.3",
     "babel-loader": "^8.0.6",
     "blob-util": "^1.3.0",
     "chai": "~3.5.0",
@@ -50,10 +51,10 @@
     "eslint-loader": "^3.0.3",
     "eslint-plugin-promise": "^4.2.1",
     "http-server": "~0.10.0",
-    "istanbul": "^0.4.5",
     "jshint": "2.11.0",
     "mkdirp": "^0.5.1",
     "mocha": "~4.1.0",
+    "nyc": "^15.0.0",
     "phantomjs-prebuilt": "^2.1.16",
     "pouchdb-adapter-http": "^7.1.1",
     "pouchdb-adapter-memory": "^7.1.0",
