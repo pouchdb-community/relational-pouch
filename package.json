@@ -27,7 +27,7 @@
     "test": "npm run lint && bash ./bin/run-test.sh",
     "build": "webpack --mode=production",
     "dev": "node ./bin/dev-server.js",
-    "coverage": "npm run test-node --coverage && nyc check-coverage --lines 100 --function 100 --statements 100 --branches 100"
+    "coverage": "npm test --coverage && nyc check-coverage --lines 100 --function 100 --statements 100 --branches 100"
   },
   "dependencies": {
     "argsarray": "0.0.1",
@@ -51,6 +51,7 @@
     "eslint-loader": "^3.0.3",
     "eslint-plugin-promise": "^4.2.1",
     "http-server": "~0.10.0",
+    "istanbul-instrumenter-loader": "^3.0.1",
     "jshint": "2.11.0",
     "mkdirp": "^0.5.1",
     "mocha": "~4.1.0",
