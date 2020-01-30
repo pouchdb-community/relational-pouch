@@ -32,6 +32,8 @@ let nodeTarget = {
                   "node": "current"
                 },
                 "modules": false,
+                useBuiltIns: "usage",
+                corejs: 2,
               }],
             ],
           },
@@ -73,6 +75,8 @@ let webTarget = {
               {
                 "targets": "> 0.25%, not dead",
                 "modules": false,
+                useBuiltIns: "usage",
+                corejs: 2,
               }],
             ],
           },

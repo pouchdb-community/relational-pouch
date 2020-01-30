@@ -46,6 +46,9 @@ var b = webpack({
               {
                 "targets": "last 1 Chrome versions",
                 "modules": false,
+                useBuiltIns: "usage",
+                corejs: 2,
+
               }],
             ],
           },

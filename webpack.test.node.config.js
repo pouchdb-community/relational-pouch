@@ -31,6 +31,8 @@ let nodeTarget = {
                   "node": "current"
                 },
                 "modules": false,
+                useBuiltIns: "usage",
+                corejs: 2,
               }],
             ],
           },
