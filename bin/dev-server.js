@@ -19,15 +19,22 @@ var b = webpack({
   target: "web",
 	entry: "./test/test.js",
 	mode: 'development',
+	devtool: 'source-map',
 	output: {
-	  path: path.resolve(__dirname, 'tests'),
-	  filename: 'test-bundle.js.js',
+	  path: path.resolve(__dirname, '../test'),
+	  filename: 'test-bundle.js',
     libraryTarget: 'umd',
   },
   plugins: [
   ],
   module: {
     rules: [
+//      {
+//        enforce: 'pre',
+//        test: /\.js$/,
+//        exclude: /node_modules/,
+//        loader: 'eslint-loader',
+//      },
       {
         test: /\.m?js$/,
         exclude: /(node_modules|bower_components)/,
@@ -37,7 +44,7 @@ var b = webpack({
             presets: [
               ['@babel/preset-env',
               {
-                "targets": "> 0.25%, not dead",
+                "targets": "last 1 Chrome versions",
                 "modules": false,
               }],
             ],
@@ -54,11 +61,12 @@ var b = webpack({
   
   if (!stats.hasErrors()) {
     console.log('Updated');
+    console.log(stats.toString({colors: true, chunks: false}));
     filesWritten = true;
     checkReady();
   } else {
     const info = stats.toJson();
-    console.error(info.errors);
+    console.error(stats.toString({colors: true, chunks: false}));
   }
 });
 

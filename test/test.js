@@ -1,20 +1,22 @@
-/*jshint expr:true */
-'use strict';
+import Pouch from 'pouchdb-core';
+import memory from 'pouchdb-adapter-memory';
+import http from 'pouchdb-adapter-http';
+import mapreduce from 'pouchdb-mapreduce';
+import find from 'pouchdb-find';
 
-var Pouch = require('pouchdb-core')
-  .plugin(require('pouchdb-adapter-memory'))
-  .plugin(require('pouchdb-adapter-http'))
-  .plugin(require('pouchdb-mapreduce'))
-  .plugin(require('pouchdb-find'));
+import rel from '../lib';
 
-//
-// your plugin goes here
-//
-var plugin = require('../lib');
-Pouch.plugin(plugin);
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 
-var chai = require('chai');
-chai.use(require("chai-as-promised"));
+Pouch
+  .plugin(memory)
+  .plugin(http)
+  .plugin(mapreduce)
+  .plugin(find)
+  .plugin(rel);
+
+chai.use(chaiAsPromised);
 
 //
 // more variables you might want

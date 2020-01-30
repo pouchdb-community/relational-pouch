@@ -90,44 +90,11 @@ let webTarget = {
 //  ],
 };
 
-let webTests = {
-  target: "web",
-	entry: "./test/test.js",
-	mode: argv.mode || 'development',
-	output: {
-	  path: path.resolve(__dirname, 'tests'),
-	  filename: 'test-bundle.js.js',
-    libraryTarget: 'umd',
-  },
-  plugins: [
-  ],
-  module: {
-    rules: [
-      {
-        test: /\.m?js$/,
-        exclude: /(node_modules|bower_components)/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: [
-              ['@babel/preset-env',
-              {
-                "targets": "> 0.25%, not dead",
-                "modules": false,
-              }],
-            ],
-          },
-        }
-      }
-    ]
-  },
-};
-
-var doSourcemapping = true;//also needs a change in run.js
+var doSourcemapping = argv.mode != 'production';//also needs a change in run.js
 if (doSourcemapping) {
   webTarget.devtool = 'source-map';//'inline-source-map',
   nodeTarget.devtool = 'source-map';
 }
 
-return [webTarget, nodeTarget, webTests];
+return [webTarget, nodeTarget,];
 };
