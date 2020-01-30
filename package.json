@@ -21,14 +21,12 @@
     "url": "https://github.com/pouchdb-community/relational-pouch/issues"
   },
   "scripts": {
-    "test-node": "istanbul test ./node_modules/mocha/bin/_mocha test/test.js",
+    "test-node": "webpack --config webpack.test.node.config && istanbul test ./node_modules/mocha/bin/_mocha test/test-node.js",
     "test-browser": "node ./bin/test-browser.js",
-    "jshint": "jshint -c .jshintrc lib test/test.js",
-    "test": "npm run jshint && bash ./bin/run-test.sh",
-    "build": "mkdirp dist && browserify -t es3ify -s RelationalPouch lib/index.js -o dist/pouchdb.relational-pouch.js && npm run min",
-    "min": "uglifyjs dist/pouchdb.relational-pouch.js -mc > dist/pouchdb.relational-pouch.min.js",
-    "dev": "webpack -c",
-    "dev-server": "node ./bin/dev-server.js",
+    "lint": "eslint lib test/test.js",
+    "test": "npm run lint && bash ./bin/run-test.sh",
+    "build": "webpack --mode=production",
+    "dev": "node ./bin/dev-server.js",
     "coverage": "npm test --coverage && istanbul check-coverage --lines 100 --function 100 --statements 100 --branches 100"
   },
   "dependencies": {
@@ -48,6 +46,9 @@
     "blob-util": "^1.3.0",
     "chai": "~3.5.0",
     "chai-as-promised": "~5.3.0",
+    "eslint": "^6.8.0",
+    "eslint-loader": "^3.0.3",
+    "eslint-plugin-promise": "^4.2.1",
     "http-server": "~0.10.0",
     "istanbul": "^0.4.5",
     "jshint": "2.11.0",

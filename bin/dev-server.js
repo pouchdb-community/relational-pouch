@@ -29,12 +29,12 @@ var b = webpack({
   ],
   module: {
     rules: [
-//      {
-//        enforce: 'pre',
-//        test: /\.js$/,
-//        exclude: /node_modules/,
-//        loader: 'eslint-loader',
-//      },
+      {
+        enforce: 'pre',
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'eslint-loader',
+      },
       {
         test: /\.m?js$/,
         exclude: /(node_modules|bower_components)/,
@@ -59,14 +59,15 @@ var b = webpack({
     return;
   }
   
+  let logOptions = {all: false, colors: true, assets: true, errors: true, errorDetails: true, warnings: true, errorStack: true};
   if (!stats.hasErrors()) {
     console.log('Updated');
-    console.log(stats.toString({colors: true, chunks: false}));
+    console.log(stats.toString(logOptions));
     filesWritten = true;
     checkReady();
   } else {
     const info = stats.toJson();
-    console.error(stats.toString({colors: true, chunks: false}));
+    console.error(stats.toString(logOptions));//children: false, entrypoints: false, hash: false, modules: false, , chunks: false
   }
 });
 

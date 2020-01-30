@@ -1,3 +1,5 @@
+/* global describe, beforeEach, afterEach, it, blobUtil */
+
 import Pouch from 'pouchdb-core';
 import memory from 'pouchdb-adapter-memory';
 import http from 'pouchdb-adapter-http';
@@ -24,7 +26,7 @@ chai.use(chaiAsPromised);
 var should = chai.should(); // var should = chai.should();
 
 var dbs = 'testdb' + Math.random() +
-    '';//',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
+    ',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
 
 dbs.split(',').forEach(function (db) {
   var dbType = /^http/.test(db) ? 'http' : 'local';
@@ -42,12 +44,12 @@ function tests(dbName, dbType) {
     return db.getIndexes().then(function(data) {
       var deleteIndexPromises = data.indexes.map(function(index) {
           return index.ddoc ? (db.deleteIndex(index)) : (Promise.resolve());
-      	});
+        });
       return Promise.all(deleteIndexPromises);
     }).catch(function() {
-    	//may fail on http
+      //may fail on http
     }).then(function() {
-    	return db.destroy();
+      return db.destroy();
     });
   });
 
@@ -594,7 +596,7 @@ function tests(dbName, dbType) {
         if (process.browser) {
           attachment = blobUtil.createBlob(['Is there life on Mars?']);
         } else {
-          attachment = new Buffer('Is there life on Mars?');
+          attachment = Buffer.from('Is there life on Mars?');
         }
         return db.putAttachment(res._id, "file", res._rev, attachment, 'text/plain');
       }).then(function () {
@@ -615,7 +617,7 @@ function tests(dbName, dbType) {
       if (process.browser) {
         attachment = blobUtil.createBlob(['Is there life on Mars?']);
       } else {
-        attachment = new Buffer('Is there life on Mars?');
+        attachment = Buffer.from('Is there life on Mars?');
       }
 
       return db.rel.save('post', {
@@ -648,7 +650,7 @@ function tests(dbName, dbType) {
       if (process.browser) {
         attachment = blobUtil.createBlob(['Is there life on Mars?']);
       } else {
-        attachment = new Buffer('Is there life on Mars?');
+        attachment = Buffer.from('Is there life on Mars?');
       }
 
       return db.rel.save('post', {
@@ -689,7 +691,7 @@ function tests(dbName, dbType) {
       if (process.browser) {
         attachment = blobUtil.createBlob(['Is there life on Mars?']);
       } else {
-        attachment = new Buffer('Is there life on Mars?');
+        attachment = Buffer.from('Is there life on Mars?');
       }
 
       return db.rel.save('post', {
@@ -733,7 +735,7 @@ function tests(dbName, dbType) {
         if (process.browser) {
           attachment = blobUtil.createBlob(['Is there life on Mars?']);
         } else {
-          attachment = new Buffer('Is there life on Mars?');
+          attachment = Buffer.from('Is there life on Mars?');
         }
         return db.rel.putAttachment('post', post, "file", attachment, 'text/plain');
       }).then(function () {
@@ -761,7 +763,7 @@ function tests(dbName, dbType) {
         if (process.browser) {
           attachment = blobUtil.createBlob(['Is there life on Mars?']);
         } else {
-          attachment = new Buffer('Is there life on Mars?');
+          attachment = Buffer.from('Is there life on Mars?');
         }
         return db.rel.putAttachment('post', post, "file", attachment, 'text/plain');
       }).then(function () {
@@ -804,7 +806,7 @@ function tests(dbName, dbType) {
         if (process.browser) {
           attachment = blobUtil.createBlob(['Is there life on Mars?']);
         } else {
-          attachment = new Buffer('Is there life on Mars?');
+          attachment = Buffer.from('Is there life on Mars?');
         }
         return db.rel.putAttachment('post', post, "file", attachment, 'text/plain');
       }).then(function () {
@@ -1328,7 +1330,7 @@ function tests(dbName, dbType) {
       ]);
 
       return db.createIndex({index: { fields: ['data.name'] }}).then(function() {
-      	return db.rel.save('author', {
+        return db.rel.save('author', {
           name: 'Stephen King',
           id: 19,
           books: [1]
@@ -1340,10 +1342,10 @@ function tests(dbName, dbType) {
           author: 19
         });
       }).then(function () {
-      	//not a rel.find
-        return db.find({selector: {'data.name': 'Stephen King'}}).then(function(findRes) {
-        	return db.rel.parseRelDocs('author', findRes.docs);
-        });
+        //not a rel.find
+        return db.find({selector: {'data.name': 'Stephen King'}});
+      }).then(function(findRes) {
+        return db.rel.parseRelDocs('author', findRes.docs);
       }).then(function (res) {
         ['authors', 'books'].forEach(function (type) {
           res[type].forEach(function (obj) {
@@ -1389,7 +1391,7 @@ function tests(dbName, dbType) {
       ]);
 
       return db.createIndex({index: { fields: ['data.author', '_id'] }}).then(function() {
-      	return db.rel.save('author', {
+        return db.rel.save('author', {
           name: 'Stephen King',
           id: 19,
         });
@@ -1432,7 +1434,7 @@ function tests(dbName, dbType) {
           singular: 'author',
           plural: 'authors',
           relations: {
-          	//omit relation should also work
+            //omit relation should also work
             'books': {hasMany: { type: 'book', options: {async: true, queryInverse: 'author'}}}
           }
         },
@@ -1446,7 +1448,7 @@ function tests(dbName, dbType) {
       ]);
 
       return db.createIndex({index: { fields: ['data.author', '_id'] }}).then(function() {
-      	return db.rel.save('author', {
+        return db.rel.save('author', {
           name: 'Stephen King',
           id: 19,
         });
@@ -1476,7 +1478,7 @@ function tests(dbName, dbType) {
 
         return db.rel.findHasMany('book', 'author', 19);
       }).then(function(res) {
-      	['books'].forEach(function (type) {
+        ['books'].forEach(function (type) {
           res[type].forEach(function (obj) {
             obj.rev.should.be.a('string');
             delete obj.rev;
