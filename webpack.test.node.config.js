@@ -1,7 +1,26 @@
 
 let webpack = require('webpack');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 let path = require('path');
+
+let babelLoader = {
+  loader: 'babel-loader',
+  options: {
+    presets: [
+      ['@babel/preset-env',
+      {
+        "targets": {
+          "node": "current"
+        },
+        "modules": false,
+        useBuiltIns: "usage",
+        corejs: 3,
+      }],
+    ],
+    plugins: ["istanbul"],
+  },
+};
 
 module.exports = (env, argv) => {
 let nodeTarget = {
@@ -15,31 +34,33 @@ let nodeTarget = {
     libraryTarget: 'commonjs2',
   },
   plugins: [
+    new ForkTsCheckerWebpackPlugin(),
   ],
   module: {
     rules: [
       {
-        test: /\.m?js$/,
+        test: /\.[tj]s$/,
         exclude: /(node_modules|bower_components)/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: [
-              ['@babel/preset-env',
-              {
-                "targets": {
-                  "node": "current"
-                },
-                "modules": false,
-                useBuiltIns: "usage",
-                corejs: 3,
-              }],
-            ],
-            plugins: ["istanbul"],
+        use: [
+          babelLoader,
+          {
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: true,
+              experimentalWatchApi: true,
+            },
           },
-        }
+        ],
       },
+//      {
+//        test: /\.m?js$/,
+//        exclude: /(node_modules|bower_components)/,
+//        use: babelLoader,
+//      },
     ]
+  },
+  resolve: {
+    extensions: ['tsx', '.ts', '.js', '.json'],
   },
 };
 

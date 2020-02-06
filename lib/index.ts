@@ -10,7 +10,7 @@ function extend(deep, target, src) {
 
 function createError(str) {
   let err = new Error(str);
-  err.status = 400;
+  //err.status = 400;
   return err;
 }
 
@@ -20,7 +20,7 @@ const TYPE_NUM = '1';
 const TYPE_STRING = '2';
 const TYPE_OBJ = '3';
 
-function serialize(type, id) {
+function serialize(type, id = undefined) {
   // simple collation that goes like this:
   // undefined < numbers < strings < object
   let res = type.replace('_', '') + '_';
@@ -98,7 +98,7 @@ function setSchema(schema) {
    */
   function toRawDoc(typeInfo, obj) {
     obj = extend(true, {}, obj);
-    let doc = {};
+    let doc:any = {};
 
     if (obj.rev) {
       doc._rev = obj.rev;
@@ -199,7 +199,7 @@ function setSchema(schema) {
   async function _find(type, idOrIds, foundObjects) {
     let typeInfo = getTypeInfo(type);
 
-    let opts = {
+    let opts:any = {
       include_docs: true
     };
 
@@ -284,7 +284,7 @@ function setSchema(schema) {
         let relationDef = typeInfo.relations[field];
         let relationType = Object.keys(relationDef)[0];
         let relatedType = relationDef[relationType];
-        let relationOptions = {};
+        let relationOptions: any = {};
         if (typeof relatedType !== 'string') {
           relationOptions = relatedType.options || {};
           if (relationOptions.async) {

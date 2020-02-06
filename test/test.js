@@ -6,10 +6,10 @@ import http from 'pouchdb-adapter-http';
 import mapreduce from 'pouchdb-mapreduce';
 import find from 'pouchdb-find';
 
-import rel from '../lib';
+import rel from '../lib/';
 
-import chai from 'chai';
-import chaiAsPromised from 'chai-as-promised';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 
 Pouch
   .plugin(memory)
@@ -26,7 +26,7 @@ chai.use(chaiAsPromised);
 var should = chai.should(); // var should = chai.should();
 
 var dbs = 'testdb' + Math.random() +
-    ',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
+    '';//',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
 
 dbs.split(',').forEach(function (db) {
   var dbType = /^http/.test(db) ? 'http' : 'local';
