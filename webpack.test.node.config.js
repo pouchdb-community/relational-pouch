@@ -32,20 +32,12 @@ let nodeTarget = {
                 },
                 "modules": false,
                 useBuiltIns: "usage",
-                corejs: 2,
+                corejs: 3,
               }],
             ],
+            plugins: ["istanbul"],
           },
         }
-      },
-      {
-        test: /\.js$|\.jsx$/,
-        use: {
-          loader: 'istanbul-instrumenter-loader',
-          options: { esModules: true }
-        },
-        enforce: 'post',
-        exclude: /node_modules|\.spec\.js$/,
       },
     ]
   },

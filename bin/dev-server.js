@@ -12,7 +12,6 @@ var fs = require('fs');
 var indexfile = "./test/test.js";
 var dotfile = "./test/.test-bundle.js";
 var outfile = "./test/test-bundle.js";
-var watchify = require("watchify");
 var webpack = require('webpack');
 var path = require('path');
 var b = webpack({
@@ -47,8 +46,7 @@ var b = webpack({
                 "targets": "last 1 Chrome versions",
                 "modules": false,
                 useBuiltIns: "usage",
-                corejs: 2,
-
+                corejs: 3,
               }],
             ],
           },
