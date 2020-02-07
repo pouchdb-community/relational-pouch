@@ -3,18 +3,16 @@
   	"lib": ["es5", "es2015", "dom", "scripthost"],
     "target": "esnext",
     "declaration": true,
-    "outDir": "./dist",
+    "outDir": "./lib",
     "strict": false,
     "allowSyntheticDefaultImports": true,
-    "sourceMap": true,
-    "allowJs": true,
-    "baseUrl": "./test",
+    "baseUrl": "./src",
     /*"paths": {
     	"*": ["@types/*"]
     },*/
     "moduleResolution": "node",
     "typeRoots": ["@types", "node_modules/@types"],
   },
-  "include": ["lib"],
+  "include": ["src"],
   "exclude": ["node_modules"]
 }

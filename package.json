@@ -2,7 +2,9 @@
   "name": "relational-pouch",
   "version": "3.2.0",
   "description": "PouchDB, relational style",
-  "main": "lib/index.js",
+  "main": "dist/pouchdb.relational-pouch.node.js",
+  "jsnext:main": "lib/index.js",
+  "module": "lib/index.js",
   "repository": {
     "type": "git",
     "url": "git://github.com/pouchdb-community/relational-pouch.git"
@@ -23,9 +25,10 @@
   "scripts": {
     "test-node": "webpack --config webpack.test.node.config.js && nyc ./node_modules/mocha/bin/_mocha test/test-node.js",
     "test-browser": "node ./bin/test-browser.js",
-    "lint": "eslint --ext .js,.ts lib test/test.js",
+    "lint": "eslint --ext .js,.ts src test/test.js",
     "test": "npm run lint && bash ./bin/run-test.sh",
-    "build": "webpack --mode=production",
+    "build": "webpack --mode=production && tsc",
+    "tsc": "tsc --build tsconfig.json",
     "dev": "node ./bin/dev-server.js",
     "coverage": "npm test --coverage && nyc check-coverage --lines 100 --function 100 --statements 100 --branches 100"
   },
@@ -73,6 +76,7 @@
     "pouchdb-core": "^7.1.1",
     "pouchdb-find": "^7.1.0",
     "pouchdb-mapreduce": "^7.1.1",
+    "regenerator-runtime": "^0.13.3",
     "request": "^2.88.0",
     "sauce-connect-launcher": "1.2.6",
     "selenium-standalone": "6.16.0",

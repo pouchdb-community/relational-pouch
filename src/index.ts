@@ -1,16 +1,11 @@
-import {assign, clone} from 'pouchdb-utils';
 import uuid from './uuid';
 import uniq from 'uniq';
 
-function extend(deep, target, src) {
-  src = clone(src);
-  assign(target, src);
-  return target;
-}
+//import 'pouchdb-find';//only used for typing
 
 function createError(str) {
-  let err = new Error(str);
-  //err.status = 400;
+  let err:any = new Error(str);
+  err.status = 400;
   return err;
 }
 
@@ -54,7 +49,7 @@ function deserialize(str) {
 }
 
 function setSchema(schema) {
-  let db = this;
+  let db:PouchDB.Database<any> = this;// & {rel:any} 
 
   let keysToSchemas = new Map();
   schema.forEach(function (type) {
@@ -97,7 +92,7 @@ function setSchema(schema) {
    * Transform a relational object into a PouchDB doc.
    */
   function toRawDoc(typeInfo, obj) {
-    obj = extend(true, {}, obj);
+    obj = Object.assign({}, obj);
     let doc:any = {};
 
     if (obj.rev) {
@@ -175,7 +170,7 @@ function setSchema(schema) {
     let pouchDoc = toRawDoc(typeInfo, obj);
     let pouchRes = await db.put(pouchDoc);
     let res = {};
-    res[typeInfo.plural] = [extend(true, obj, {
+    res[typeInfo.plural] = [Object.assign(obj, {
       id: deserialize(pouchRes.id),
       rev: pouchRes.rev
     })];
@@ -312,7 +307,7 @@ function setSchema(schema) {
           }
 
           /* istanbul ignore next */
-          let relatedIds = (extend(true, [], obj[field]) || []).filter(function (relatedId) {
+          let relatedIds = (obj[field] || []).filter(function (relatedId) {
             return typeof relatedId !== 'undefined';
           });
           
@@ -374,7 +369,7 @@ function setSchema(schema) {
     let typeInfo = getTypeInfo(type);
     let pouchRes = await db.putAttachment(dbDocId, attachmentId, obj.rev, attachment, attachmentType);
     let res = {};
-    res[typeInfo.plural] = [extend(true, obj, {
+    res[typeInfo.plural] = [Object.assign(obj, {
       id: deserialize(pouchRes.id),
       rev: pouchRes.rev
     })];
@@ -386,7 +381,7 @@ function setSchema(schema) {
     let typeInfo = getTypeInfo(type);
     let pouchRes = await db.removeAttachment(dbDocId, attachmentId, obj.rev);
     let res = {};
-    res[typeInfo.plural] = [extend(true, obj, {
+    res[typeInfo.plural] = [Object.assign(obj, {
       id: deserialize(pouchRes.id),
       rev: pouchRes.rev
     })];

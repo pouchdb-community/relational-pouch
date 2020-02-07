@@ -6,7 +6,7 @@ import http from 'pouchdb-adapter-http';
 import mapreduce from 'pouchdb-mapreduce';
 import find from 'pouchdb-find';
 
-import rel from '../lib/';
+import rel from '../src/';
 
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';

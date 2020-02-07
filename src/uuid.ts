@@ -41,7 +41,7 @@ var chars = (
 function getValue(radix) {
   return 0 | Math.random() * radix;
 }
-function uuid(len, radix) {
+function uuid(len?:number, radix?:number) {
   radix = radix || chars.length;
   var out = '';
   var i = -1;
