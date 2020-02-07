@@ -74,9 +74,6 @@ let webTarget = {
 	  filename: 'pouchdb.relational-pouch.browser.js',
     libraryTarget: 'umd',
   },
-//  externals: [
-//    'core-js',
-//  ],
   plugins: [
   ],
   module: {
@@ -95,7 +92,6 @@ let webTarget = {
                   "modules": false,
                   useBuiltIns: "usage",
                   corejs: 3,
-                  debug: true,
                 }],
               ],
             },
