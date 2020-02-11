@@ -27,7 +27,7 @@ module.exports = (env, argv) => {
 let nodeTarget = {
   stats: 'errors-only',
 	target: "node",
-	entry: "./test/test.js",
+	entry: "./test/test.ts",
 	mode: argv.mode || 'development',
   externals: Object.keys(package.dependencies),
 	output: {

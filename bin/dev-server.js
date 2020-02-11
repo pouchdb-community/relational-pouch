@@ -5,6 +5,8 @@
 var COUCH_HOST = process.env.COUCH_HOST || 'http://127.0.0.1:5984';
 var HTTP_PORT = 8001;
 
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+
 var Promise = require('bluebird');
 var request = require('request');
 var http_server = require("http-server");
@@ -14,9 +16,10 @@ var dotfile = "./test/.test-bundle.js";
 var outfile = "./test/test-bundle.js";
 var webpack = require('webpack');
 var path = require('path');
+
 var b = webpack({
   target: "web",
-	entry: "./test/test.js",
+	entry: "./test/test.ts",
 	mode: 'development',
 	devtool: 'source-map',
 	output: {
@@ -25,15 +28,16 @@ var b = webpack({
     libraryTarget: 'umd',
   },
   plugins: [
+    new ForkTsCheckerWebpackPlugin({eslint: true, tsconfig: "test.tsconfig.json"}),
   ],
   module: {
     rules: [
-      {
-        enforce: 'pre',
-        test: /\.js$/,
-        exclude: /node_modules/,
-        loader: 'eslint-loader',
-      },
+//      {
+//        enforce: 'pre',
+//        test: /\.[tj]s$/,
+//        exclude: /node_modules/,
+//        loader: 'eslint-loader',
+//      },
       {
         test: /\.[tj]s$/,
         exclude: /(node_modules|bower_components)/,
@@ -57,6 +61,8 @@ var b = webpack({
             options: {
               transpileOnly: true,
               experimentalWatchApi: true,
+              context: path.resolve(__dirname, '../'),
+              configFile: "test.tsconfig.json",
             },
           },
         ],

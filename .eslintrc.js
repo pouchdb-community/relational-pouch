@@ -6,7 +6,7 @@ module.exports = {
     sourceType: 'module',
 //    project: "./tsconfig.json",
     tsconfigRootDir: __dirname,
-    project: ['./tsconfig.json'],
+    project: ['./test.tsconfig.json'],
   },
   parser: '@typescript-eslint/parser',
   plugins: [

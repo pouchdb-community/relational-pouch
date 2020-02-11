@@ -467,4 +467,4 @@ function setSchema(schema) {
   };
 }
 
-export default {setSchema};
+export default {setSchema} as unknown as PouchDB.Plugin;

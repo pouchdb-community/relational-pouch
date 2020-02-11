@@ -1,4 +1,4 @@
-/* global describe, beforeEach, afterEach, it, blobUtil */
+import {createBlob} from 'blob-util';
 
 import Pouch from 'pouchdb-core';
 import memory from 'pouchdb-adapter-memory';
@@ -95,7 +95,6 @@ function tests(dbName, dbType) {
     });
 
     it('should store blog posts', function () {
-
       db.setSchema([{
         singular: 'post',
         plural: 'posts'
@@ -169,7 +168,7 @@ function tests(dbName, dbType) {
       var title = 'Rails is Omakase';
       var text = 'There are a lot of ala carte blah blah blah';
       var id = 1;
-      var post = {
+      var post:any = {
         title: title,
         text: text,
         id: id
@@ -569,8 +568,8 @@ function tests(dbName, dbType) {
         return db.get("post_2_with_attachment");
       }).then(function (res) {
         var attachment;
-        if (process.browser) {
-          attachment = blobUtil.createBlob(['Is there life on Mars?']);
+        if (typeof window !== 'undefined') {
+          attachment = createBlob(['Is there life on Mars?']);
         } else {
           attachment = Buffer.from('Is there life on Mars?');
         }
@@ -590,8 +589,8 @@ function tests(dbName, dbType) {
       }]);
 
       var attachment;
-      if (process.browser) {
-        attachment = blobUtil.createBlob(['Is there life on Mars?']);
+      if (typeof window !== 'undefined') {
+        attachment = createBlob(['Is there life on Mars?']);
       } else {
         attachment = Buffer.from('Is there life on Mars?');
       }
@@ -623,8 +622,8 @@ function tests(dbName, dbType) {
       }]);
 
       var attachment;
-      if (process.browser) {
-        attachment = blobUtil.createBlob(['Is there life on Mars?']);
+      if (typeof window !== 'undefined') {
+        attachment = createBlob(['Is there life on Mars?']);
       } else {
         attachment = Buffer.from('Is there life on Mars?');
       }
@@ -664,8 +663,8 @@ function tests(dbName, dbType) {
       }]);
 
       var attachment;
-      if (process.browser) {
-        attachment = blobUtil.createBlob(['Is there life on Mars?']);
+      if (typeof window !== 'undefined') {
+        attachment = createBlob(['Is there life on Mars?']);
       } else {
         attachment = Buffer.from('Is there life on Mars?');
       }
@@ -710,8 +709,8 @@ function tests(dbName, dbType) {
       }).then(function (res) {
         var attachment;
         var post = res.posts[0];
-        if (process.browser) {
-          attachment = blobUtil.createBlob(['Is there life on Mars?']);
+        if (typeof window !== 'undefined') {
+          attachment = createBlob(['Is there life on Mars?']);
         } else {
           attachment = Buffer.from('Is there life on Mars?');
         }
@@ -740,8 +739,8 @@ function tests(dbName, dbType) {
       }).then(function (res) {
         var attachment;
         var post = res.posts[0];
-        if (process.browser) {
-          attachment = blobUtil.createBlob(['Is there life on Mars?']);
+        if (typeof window !== 'undefined') {
+          attachment = createBlob(['Is there life on Mars?']);
         } else {
           attachment = Buffer.from('Is there life on Mars?');
         }
@@ -749,12 +748,12 @@ function tests(dbName, dbType) {
       }).then(function () {
         return db.rel.getAttachment('post', 'with_attachment', 'file');
       }).then(function (attachment) {
-        if (process.browser) {
+        if (typeof window !== 'undefined') {
           var reader = new FileReader();
           reader.onloadend = function () {
 
             var binary = "";
-            var bytes = new Uint8Array(this.result || '');
+            var bytes = new Uint8Array(this.result as ArrayBuffer);
             var length = bytes.byteLength;
 
             for (var i = 0; i < length; i++) {
@@ -785,8 +784,8 @@ function tests(dbName, dbType) {
       }).then(function (res) {
         var attachment;
         var post = res.posts[0];
-        if (process.browser) {
-          attachment = blobUtil.createBlob(['Is there life on Mars?']);
+        if (typeof window !== 'undefined') {
+          attachment = createBlob(['Is there life on Mars?']);
         } else {
           attachment = Buffer.from('Is there life on Mars?');
         }
