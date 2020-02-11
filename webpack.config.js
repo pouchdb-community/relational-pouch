@@ -14,6 +14,7 @@ let nodeTarget = {
 	  path: path.resolve(__dirname, 'dist'),
 	  filename: 'pouchdb.relational-pouch.node.js',
     libraryTarget: 'commonjs2',
+    libraryExport: 'default',
   },
   externals: Object.keys(package.dependencies),
   plugins: [
