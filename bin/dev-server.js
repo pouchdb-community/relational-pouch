@@ -35,24 +35,36 @@ var b = webpack({
         loader: 'eslint-loader',
       },
       {
-        test: /\.m?js$/,
+        test: /\.[tj]s$/,
         exclude: /(node_modules|bower_components)/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: [
-              ['@babel/preset-env',
-              {
-                "targets": "last 1 Chrome versions",
-                "modules": false,
-                useBuiltIns: "usage",
-                corejs: 3,
-              }],
-            ],
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: [
+                ['@babel/preset-env',
+                {
+                  "targets": "last 1 Chrome versions",
+                  "modules": false,
+                  useBuiltIns: "usage",
+                  corejs: 3,
+                }],
+              ],
+            },
           },
-        }
+          {
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: true,
+              experimentalWatchApi: true,
+            },
+          },
+        ],
       }
     ]
+  },
+  resolve: {
+    extensions: ['tsx', '.ts', '.js', '.json'],
   },
 }).watch({}, (error, stats) => {
   if (error) {
