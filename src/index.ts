@@ -169,11 +169,10 @@ function setSchema(schema) {
     let typeInfo = getTypeInfo(type);
     let pouchDoc = toRawDoc(typeInfo, obj);
     let pouchRes = await db.put(pouchDoc);
-    let res = {};
-    res[typeInfo.plural] = [Object.assign(obj, {
+    let res = {
       id: deserialize(pouchRes.id),
       rev: pouchRes.rev
-    })];
+    };
     return res;
   }
 
@@ -368,11 +367,10 @@ function setSchema(schema) {
     let dbDocId = serialize(type, obj.id);
     let typeInfo = getTypeInfo(type);
     let pouchRes = await db.putAttachment(dbDocId, attachmentId, obj.rev, attachment, attachmentType);
-    let res = {};
-    res[typeInfo.plural] = [Object.assign(obj, {
+    let res = {
       id: deserialize(pouchRes.id),
       rev: pouchRes.rev
-    })];
+    };
     return res;
   }
 
@@ -380,11 +378,10 @@ function setSchema(schema) {
     let dbDocId = serialize(type, obj.id);
     let typeInfo = getTypeInfo(type);
     let pouchRes = await db.removeAttachment(dbDocId, attachmentId, obj.rev);
-    let res = {};
-    res[typeInfo.plural] = [Object.assign(obj, {
+    let res = {
       id: deserialize(pouchRes.id),
       rev: pouchRes.rev
-    })];
+    };
     return res;
   }
 

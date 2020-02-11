@@ -26,7 +26,7 @@ chai.use(chaiAsPromised);
 var should = chai.should(); // var should = chai.should();
 
 var dbs = 'testdb' + Math.random() +
-    '';//',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
+    ',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
 
 dbs.split(',').forEach(function (db) {
   var dbType = /^http/.test(db) ? 'http' : 'local';
@@ -109,17 +109,8 @@ function tests(dbName, dbType) {
         text: text
       }).then(function (res) {
         should.exist(res);
-        res.posts.should.have.length(1);
-        res.posts[0].id.should.be.a('string');
-        res.posts[0].rev.should.be.a('string');
-        var id = res.posts[0].id;
-        var rev = res.posts[0].rev;
-        res.posts[0].should.deep.equal({
-          id: id,
-          rev: rev,
-          title: title,
-          text: text
-        });
+        res.id.should.be.a('string');
+        res.rev.should.be.a('string');
       });
     });
     it('should store blog posts with an id', function () {
@@ -139,17 +130,9 @@ function tests(dbName, dbType) {
         id: id
       }).then(function (res) {
         should.exist(res);
-        res.posts.should.have.length(1);
-        res.posts[0].id.should.be.a('string');
-        res.posts[0].rev.should.be.a('string');
-        var id = res.posts[0].id;
-        var rev = res.posts[0].rev;
-        res.posts[0].should.deep.equal({
-          id: id,
-          rev: rev,
-          title: title,
-          text: text
-        });
+        res.id.should.be.a('string');
+        res.rev.should.be.a('string');
+        res.id.should.equal(id);
       });
     });
 
@@ -170,17 +153,9 @@ function tests(dbName, dbType) {
         id: id
       }).then(function (res) {
         should.exist(res);
-        res.posts.should.have.length(1);
-        res.posts[0].id.should.be.a('number');
-        res.posts[0].rev.should.be.a('string');
-        var id = res.posts[0].id;
-        var rev = res.posts[0].rev;
-        res.posts[0].should.deep.equal({
-          id: id,
-          rev: rev,
-          title: title,
-          text: text
-        });
+        res.id.should.be.a('number');
+        res.rev.should.be.a('string');
+        res.id.should.equal(id);
       });
     });
 
@@ -194,24 +169,25 @@ function tests(dbName, dbType) {
       var title = 'Rails is Omakase';
       var text = 'There are a lot of ala carte blah blah blah';
       var id = 1;
-
-      return db.rel.save('post', {
+      var post = {
         title: title,
         text: text,
         id: id
-      }).then(function (res) {
+      };
+
+      return db.rel.save('post', post).then(function (res) {
         should.exist(res);
-        var post = res.posts[0];
+        res.rev.should.be.a('string');
+        res.id.should.be.a('number');
+        res.id.should.equal(id);
+        Object.assign(post, res);
         post.title = 'Rails is Unagi';
         return db.rel.save('post', post);
       }).then(function (res) {
-        var rev = res.posts[0].rev;
-        res.posts.should.deep.equal([{
-          id: id,
-          rev: rev,
-          title: 'Rails is Unagi',
-          text: text
-        }]);
+        res.rev.should.be.a('string');
+        res.id.should.be.a('number');
+        res.id.should.equal(id);
+        res.rev.should.not.equal(post.rev);
       });
     });
 
@@ -729,6 +705,8 @@ function tests(dbName, dbType) {
         title: "Files are cool",
         text: "In order to have nice blog posts we need to be able to add files",
         id: 'with_attachment'
+      }).then(function() {
+        return db.rel.find('post', 'with_attachment');
       }).then(function (res) {
         var attachment;
         var post = res.posts[0];
@@ -757,6 +735,8 @@ function tests(dbName, dbType) {
         title: "Files are cool",
         text: "In order to have nice blog posts we need to be able to add files",
         id: 'with_attachment'
+      }).then(function() {
+        return db.rel.find('post', 'with_attachment');
       }).then(function (res) {
         var attachment;
         var post = res.posts[0];
@@ -800,6 +780,8 @@ function tests(dbName, dbType) {
         title: "Files are cool",
         text: "In order to have nice blog posts we need to be able to add files",
         id: 'with_attachment'
+      }).then(function() {
+        return db.rel.find('post', 'with_attachment');
       }).then(function (res) {
         var attachment;
         var post = res.posts[0];
