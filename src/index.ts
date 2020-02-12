@@ -367,10 +367,7 @@ function setSchema(schema) {
     let dbDocId = serialize(type, obj.id);
     let typeInfo = getTypeInfo(type);
     let pouchRes = await db.putAttachment(dbDocId, attachmentId, obj.rev, attachment, attachmentType);
-    let res = {
-      id: deserialize(pouchRes.id),
-      rev: pouchRes.rev
-    };
+    let res = pouchRes.rev;
     return res;
   }
 
@@ -378,10 +375,7 @@ function setSchema(schema) {
     let dbDocId = serialize(type, obj.id);
     let typeInfo = getTypeInfo(type);
     let pouchRes = await db.removeAttachment(dbDocId, attachmentId, obj.rev);
-    let res = {
-      id: deserialize(pouchRes.id),
-      rev: pouchRes.rev
-    };
+    let res = pouchRes.rev;
     return res;
   }
 
