@@ -34,7 +34,7 @@ dbs.split(',').forEach(function (db) {
 });
 
 function tests(dbName, dbType) {
-  var db;
+  var db:PouchDB.Database<any>;
 
   beforeEach(function () {
     db = new Pouch(dbName);
@@ -43,7 +43,7 @@ function tests(dbName, dbType) {
   afterEach(function () {
     return db.getIndexes().then(function(data) {
       var deleteIndexPromises = data.indexes.map(function(index) {
-          return index.ddoc ? (db.deleteIndex(index)) : (Promise.resolve());
+          return index.ddoc ? (db.deleteIndex(index)) : null;
         });
       return Promise.all(deleteIndexPromises);
     }).catch(function() {

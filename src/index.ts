@@ -1,7 +1,7 @@
 import uuid from './uuid';
 import uniq from 'uniq';
 
-//import 'pouchdb-find';//only used for typing
+import './pouchdb';//needed to extend in PouchDB namespace
 
 function createError(str) {
   let err:any = new Error(str);
