@@ -32,7 +32,7 @@ let nodeTarget = {
                 ['@babel/preset-env',
                 {
                   "targets": {
-                    "node": "current"
+                    "node": "10"
                   },
                   "modules": false,
                   useBuiltIns: "usage",
