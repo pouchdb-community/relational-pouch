@@ -23,10 +23,10 @@ chai.use(chaiAsPromised);
 //
 // more variables you might want
 //
-var should = chai.should(); // var should = chai.should();
+var should = chai.should();
 
 var dbs = 'testdb' + Math.random() +
-    ',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
+    ',http://' + (process.env.RELATIONAL_POUCH_DB_AUTH || '') + 'localhost:5984/testdb' + Math.round(Math.random() * 100000);
 
 dbs.split(',').forEach(function (db) {
   var dbType = /^http/.test(db) ? 'http' : 'local';
@@ -189,7 +189,24 @@ function tests(dbName, dbType) {
         res.rev.should.not.equal(post.rev);
       });
     });
+    
+    it('fails on a rev conflict', function () {
 
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+      
+      var post:any = {
+        title: "Some title",
+        id: "postid"
+      };
+      
+      return db.rel.save('post', post).then(function (res) {
+        return db.rel.save('post', post);
+      }).should.be.rejected;
+    });
+    
     it('should find blog posts', function () {
 
       db.setSchema([{
@@ -506,6 +523,28 @@ function tests(dbName, dbType) {
       ]);
 
       db.rel.parseDocID('post_2_bar').should.deep.equal({ type: 'postSummary', id: 'bar' });
+    });
+    
+    it('should save a snapshot, so changes after rel.save should be ignored', function () {
+      db.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+      
+      let titleBeforeSaving = "Title before saving";
+      let post = {
+        title: titleBeforeSaving,
+        id: 'snapshot'
+      };
+      
+      let savePromise = db.rel.save('post', post);
+      post.title = "Title after saving";
+
+      return savePromise.then(function () {
+        return db.rel.find('post', post.id);
+      }).then(function (res) {
+        res.posts[0].title.should.equal(titleBeforeSaving);
+      });
     });
 
     it('can delete', function () {

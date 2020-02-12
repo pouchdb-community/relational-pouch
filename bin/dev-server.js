@@ -29,6 +29,7 @@ var b = webpack({
   },
   plugins: [
     new ForkTsCheckerWebpackPlugin({eslint: true, tsconfig: "test.tsconfig.json"}),
+    new webpack.EnvironmentPlugin(['RELATIONAL_POUCH_DB_AUTH']),
   ],
   module: {
     rules: [
