@@ -2,9 +2,7 @@
 import uuid from './uuid';
 import uniq from 'uniq';
 
-export type RelDB = ReturnType<typeof createRel>;
-
-import './pouchdb';//needed to extend in PouchDB namespace
+type RelDB = ReturnType<typeof createRel>;
 
 function createError(str) {
   let err:any = new Error(str);
@@ -470,4 +468,25 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
   };
 }
 
-export default {setSchema} as unknown as PouchDB.Plugin;
+export default {setSchema};
+
+declare global {
+  namespace PouchDB {
+    interface Static {
+      //TODO: return PluggedInStatic<T>, which overwrites new and default to return extended Database interface
+      // so we don't just extend the namespace, but instead really change the result of .plugin
+      
+      plugin<T extends {}>(plugin: T): Static;
+      //plugin(plugin: function(Static)): Static;
+    }
+    
+    interface Database<Content extends {} = {}> {
+      setSchema<T extends {} = Content>(schema: any): RelDatabase<T>;
+    }
+    
+    interface RelDatabase <Content extends {} = {}> extends Database<Content> {
+      rel: RelDB;
+    }
+  }
+}
+
