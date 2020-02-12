@@ -347,13 +347,10 @@ var attachment = new Blob(['Is there life on Mars?']);
 db.rel.putAttachment('post', {id:1, rev:"1-..."}, 'file', attachment, 'text/plain');
 ```
 
-Result:
+This returns the new rev:
 
 ```js
-{
-  "id": 1,
-  "rev": "2-...."
-}
+"2-...."
 ```
 
 ### db.rel.getAttachment(type, id, attachmentId)
@@ -385,13 +382,10 @@ Or continuing from the `putAttachment` example:
 db.rel.removeAttachment('post', {id: 1, rev:"2-09d5c5bd86fc170c064b296773044ea9"} , 'file');
 ```
 
-Result:
+This returns the new rev:
 
 ```js
-{
-  "id": 1,
-  "rev": "3-...."
-}
+"3-...."
 ```
 
 ### db.rel.parseDocID(docID)
@@ -1131,14 +1125,15 @@ This will run the tests automatically and the process will exit with a 0 or a 1 
 
 ### 4.0.0-beta
 
-- To prevent us from having to do cloning of input documents, we have changed the `save`, `putAttachment` and `removeAttachment` API. These functions no longer return the complete document. The attachment functions only return the new `rev` value, while the save will also return the `id`. So after these promises resolve you have to manually update your in app data to reflect this new revision (and possibly id) if you want to update the document later. You can use something like the following: ```
-let updatedData = await db.rel.save('post', post);
-Object.assign(post, updatedData);
-```
-or
-```
-post.rev = await db.rel.putAttachment('post', post, 'file', fileData);
-```
+- To prevent us from having to do cloning of input documents, we have changed the `save`, `putAttachment` and `removeAttachment` API. These functions no longer return the complete document. The attachment functions only return the new `rev` value, while the save will also return the `id`. So after these promises resolve you have to manually update your in app data to reflect this new revision (and possibly id) if you want to update the document later. You can use something like the following:
+  ```js
+  let updatedData = await db.rel.save('post', post);
+  Object.assign(post, updatedData);
+  ```
+  or
+  ```js
+  post.rev = await db.rel.putAttachment('post', post, 'file', fileData);
+  ```
 - This library now uses Typescript, Webpack and Babel in its build setup. The resulting Typescript definitions are not yet final as modifying the PouchDB interface is tricky. The build creates files in 2 output directories: lib and dist.
 	- The lib directory will contain the output of `tsc` in esnext mode. So this can be used by Webpack and other module aware systems. These will require Babel transformations if you want to use them, but this way you can specify your own target.
 	- The dist directory contains 2 files, pouchdb.relational-pouch.browser.js and pouchdb.relational-pouch.node.js. These are compiled by webpack with targets ">2%, not ie 11" and "node 10". This should be sufficient for now, but otherwise you can build your own with Webpack.
