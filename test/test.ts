@@ -34,22 +34,22 @@ dbs.split(',').forEach(function (db) {
 });
 
 function tests(dbName, dbType) {
-  var db:PouchDB.Database<any>;
+  var rootdb:PouchDB.Database<any>;
 
   beforeEach(function () {
-    db = new Pouch(dbName);
-    return db;
+    rootdb = new Pouch(dbName);
+    return rootdb;
   });
   afterEach(function () {
-    return db.getIndexes().then(function(data) {
+    return rootdb.getIndexes().then(function(data) {
       var deleteIndexPromises = data.indexes.map(function(index) {
-          return index.ddoc ? (db.deleteIndex(index)) : null;
+          return index.ddoc ? (rootdb.deleteIndex(index)) : null;
         });
       return Promise.all(deleteIndexPromises);
     }).catch(function() {
       //may fail on http
     }).then(function() {
-      return db.destroy();
+      return rootdb.destroy();
     });
   });
 
@@ -57,7 +57,7 @@ function tests(dbName, dbType) {
     this.timeout(30000);
 
     it('should barf on bad types', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -70,7 +70,7 @@ function tests(dbName, dbType) {
     });
 
     it('makeDocID and parseDocID produce symmetrical return vals', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -83,19 +83,19 @@ function tests(dbName, dbType) {
     });
 
     it('allows makeDocID for an unknown type', function () {
-      db.setSchema([]);
+      let db = rootdb.setSchema([]);
 
       db.rel.makeDocID({ type: 'something', id: 'quux' }).should.equal('something_2_quux');
     });
 
     it('allows parseDocID for an unknown type', function () {
-      db.setSchema([]);
+      let db = rootdb.setSchema([]);
 
       db.rel.parseDocID('something_2_bar').should.deep.equal({ type: 'something', id: 'bar' });
     });
 
     it('should store blog posts', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -114,7 +114,7 @@ function tests(dbName, dbType) {
     });
     it('should store blog posts with an id', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -137,7 +137,7 @@ function tests(dbName, dbType) {
 
     it('should store blog posts with an int id', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -160,7 +160,7 @@ function tests(dbName, dbType) {
 
     it('should update blog posts', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -192,7 +192,7 @@ function tests(dbName, dbType) {
     
     it('fails on a rev conflict', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -209,7 +209,7 @@ function tests(dbName, dbType) {
     
     it('should find blog posts', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -251,7 +251,7 @@ function tests(dbName, dbType) {
 
     it('should orders correctly', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -304,7 +304,7 @@ function tests(dbName, dbType) {
 
     it('should find empty blog posts', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -318,7 +318,7 @@ function tests(dbName, dbType) {
 
     it('should find stuff that doesnt exist', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -337,7 +337,7 @@ function tests(dbName, dbType) {
 
     it('should separate independent types', function () {
 
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -364,7 +364,7 @@ function tests(dbName, dbType) {
 
     it('should find a single thing', function () {
 
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -399,7 +399,7 @@ function tests(dbName, dbType) {
 
     it('should find multiple things', function () {
 
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -440,7 +440,7 @@ function tests(dbName, dbType) {
     });
 
     it('should find using a documentType if provided', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'postSummary',
           plural: 'postSummaries',
@@ -460,7 +460,7 @@ function tests(dbName, dbType) {
     });
 
     it('should save using a documentType if provided', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'postSummary',
           plural: 'postSummary',
@@ -482,7 +482,7 @@ function tests(dbName, dbType) {
     });
 
     it('should use the documentType for makeDocID', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -498,7 +498,7 @@ function tests(dbName, dbType) {
     });
 
     it('should use the default documentType for parseDocID, if present', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -514,7 +514,7 @@ function tests(dbName, dbType) {
     });
 
     it('should use a type with a matching documentType for parseDocID, if no default', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'postSummary',
           plural: 'postSummaries',
@@ -526,7 +526,7 @@ function tests(dbName, dbType) {
     });
     
     it('should save a snapshot, so changes after rel.save should be ignored', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -549,7 +549,7 @@ function tests(dbName, dbType) {
 
     it('can delete', function () {
 
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -594,7 +594,7 @@ function tests(dbName, dbType) {
 
     it('Adds attachment information', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -622,7 +622,7 @@ function tests(dbName, dbType) {
     });
 
     it('When saving the new document, saves the attachment', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -655,7 +655,7 @@ function tests(dbName, dbType) {
     });
 
     it('When updating the existing document, keeps the attachment', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -696,7 +696,7 @@ function tests(dbName, dbType) {
     });
 
     it('Removes the attachment through removal of attachments field', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -734,7 +734,7 @@ function tests(dbName, dbType) {
     });
 
     it('Adds attachments through rel.putAttachment', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -764,7 +764,7 @@ function tests(dbName, dbType) {
     });
 
     it('Get attachments through rel.getAttachment', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -801,7 +801,7 @@ function tests(dbName, dbType) {
 
             binary.should.equal('Is there life on Mars?');
           };
-          reader.readAsArrayBuffer(attachment);
+          reader.readAsArrayBuffer(attachment as Blob);
         } else {
           attachment.toString('ascii').should.equal('Is there life on Mars?');
         }
@@ -809,7 +809,7 @@ function tests(dbName, dbType) {
     });
 
     it('Removes attachments through rel.removeAttachment', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -849,7 +849,7 @@ function tests(dbName, dbType) {
 
     it('fails if you include no relations', function () {
       return Promise.resolve().then(function () {
-        db.setSchema([{
+        let db = rootdb.setSchema([{
           singular: 'foo',
           plural: 'foos',
           relations: {}
@@ -863,7 +863,7 @@ function tests(dbName, dbType) {
 
     it('fails if you include empty relationship definition', function () {
       return Promise.resolve().then(function () {
-        db.setSchema([{
+        let db = rootdb.setSchema([{
           singular: 'foo',
           plural: 'foos',
           relations: {
@@ -879,7 +879,7 @@ function tests(dbName, dbType) {
 
     it('fails for unknown entity types', function () {
       return Promise.resolve().then(function () {
-        db.setSchema([{
+        let db = rootdb.setSchema([{
           singular: 'foo',
           plural: 'foos',
           relations: {
@@ -895,7 +895,7 @@ function tests(dbName, dbType) {
 
     it('fails for unknown relation types', function () {
       return Promise.resolve().then(function () {
-        db.setSchema([
+        let db = rootdb.setSchema([
           {
             singular: 'foo',
             plural: 'foos',
@@ -920,7 +920,7 @@ function tests(dbName, dbType) {
     this.timeout(30000);
 
     it('does one-to-one', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -975,7 +975,7 @@ function tests(dbName, dbType) {
     });
 
     it('does one-to-many with empty dependents', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1015,7 +1015,7 @@ function tests(dbName, dbType) {
     });
 
     it('does one-to-many with several entities', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1108,7 +1108,7 @@ function tests(dbName, dbType) {
       });
     });
     it('does many-to-many with recursive relationship', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1332,7 +1332,7 @@ function tests(dbName, dbType) {
 
     if (dbType === 'local') { //pouchdb-find only supported on cloudant and couch >= 2.0
     it('does parseRelDocs', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1393,7 +1393,7 @@ function tests(dbName, dbType) {
     });
 
     it('does one-to-many without saving hasMany side', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1449,7 +1449,7 @@ function tests(dbName, dbType) {
     });
 
     it('does findHasMany', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1518,7 +1518,7 @@ function tests(dbName, dbType) {
     }
 
     it('does many-to-many with several entities', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1620,7 +1620,7 @@ function tests(dbName, dbType) {
     });
 
     it('should fetch all authors even with empty relations', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1691,7 +1691,7 @@ function tests(dbName, dbType) {
     });
 
     it('does one-to-many', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1790,7 +1790,7 @@ function tests(dbName, dbType) {
     });
 
     it('does one-to-many with embedded relations', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1892,7 +1892,7 @@ function tests(dbName, dbType) {
       });
     });
     it('does one-to-many and keeps the right order', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1991,7 +1991,7 @@ function tests(dbName, dbType) {
     });
 
     it('does sideload if async option is false', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -2066,7 +2066,7 @@ function tests(dbName, dbType) {
       });
     });
     it('does not sideload if async option is true', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -2126,7 +2126,7 @@ function tests(dbName, dbType) {
     });
 
     it('fromRawDoc works with changes', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -2181,7 +2181,7 @@ function tests(dbName, dbType) {
 
     it('should pass along options', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -2218,7 +2218,7 @@ function tests(dbName, dbType) {
 
     it('should pass along options, including startkey', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -2259,7 +2259,7 @@ function tests(dbName, dbType) {
 
     it('should pass along options, including endkey', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -2299,7 +2299,7 @@ function tests(dbName, dbType) {
 
   it('should pass along options, including kip', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -2339,7 +2339,7 @@ function tests(dbName, dbType) {
     });
 
   it('isDeleted should work', function() {
-    db.setSchema([{
+    let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);

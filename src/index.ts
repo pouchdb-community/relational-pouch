@@ -1,5 +1,8 @@
+
 import uuid from './uuid';
 import uniq from 'uniq';
+
+export type RelDB = ReturnType<typeof createRel>;
 
 import './pouchdb';//needed to extend in PouchDB namespace
 
@@ -48,8 +51,8 @@ function deserialize(str) {
   return id;
 }
 
-function setSchema(schema) {
-  let db:PouchDB.Database<any> = this;// & {rel:any} 
+function setSchema<T extends {} = {}>(this: PouchDB.Database<T>, schema) {
+  let db = this as PouchDB.RelDatabase<T>;// & {rel:any} 
 
   let keysToSchemas = new Map();
   schema.forEach(function (type) {
@@ -87,7 +90,13 @@ function setSchema(schema) {
       });
     }
   });
+  
+  db.rel = createRel(db as PouchDB.Database<T>, keysToSchemas, schema);
+  
+  return db;
+}
 
+function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
   /**
    * Transform a relational object into a PouchDB doc.
    */
@@ -239,7 +248,7 @@ function setSchema(schema) {
 
     try {
       let doc = await db.get(serialize(typeInfo.documentType, id));
-      return !!doc._deleted;
+      return false;
     }
     catch (err) {
       return err.reason === "deleted" ? true : null;
@@ -351,7 +360,7 @@ function setSchema(schema) {
         await _find(relatedType, relatedIds, foundObjects);
     }
 
-    let res = {};
+    let res:any = {};
     foundObjects.forEach(function (found, type) {
       let typeInfo = getTypeInfo(type);
       let list = res[typeInfo.plural] = [];
@@ -379,7 +388,7 @@ function setSchema(schema) {
     return res;
   }
 
-  async function getAttachment(type, id, attachmentId, options) {
+  async function getAttachment(type, id, attachmentId, options = undefined) {
     options = options || {};
     return db.getAttachment(serialize(type, id), attachmentId, options);
   }
@@ -388,7 +397,7 @@ function setSchema(schema) {
     return _save(type, obj);
   }
 
-  function find(type, idOrIds) {
+  function find(type, idOrIds = undefined) {
     return _find(getTypeInfo(type).singular, idOrIds, new Map());
   }
 
@@ -445,7 +454,7 @@ function setSchema(schema) {
     return serialize(type, obj.id);
   }
 
-  db.rel = {
+  return {
     save: save,
     find: find,
     findHasMany: findHasMany,

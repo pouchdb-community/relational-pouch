@@ -1,7 +1,17 @@
+/* istanbul ignore file */
 
-declare namespace PouchDB {
-  export interface Database<Content extends {} = {}> {
-      rel: any;
-      setSchema(schema: any);
+import {RelDB} from './index';
+
+declare global {
+  namespace PouchDB {
+    interface Database<Content extends {} = {}> {
+      setSchema<T extends {} = Content>(schema: any): RelDatabase<T>;
+    }
+    
+    interface RelDatabase <Content extends {} = {}> extends Database<Content> {
+      rel: RelDB;
+    }
   }
 }
+
+export {}
