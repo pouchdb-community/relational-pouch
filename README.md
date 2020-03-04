@@ -40,7 +40,7 @@ Then include it after `pouchdb.js` in your HTML page:
 ```html
 <script src="pouchdb.js"></script>
 <script src="pouchdb.find.js"></script>
-<script src="pouchdb.relational-pouch.js"></script>
+<script src="pouchdb.relational-pouch.browser.js"></script>
 ```
 
 ### In Node.js
@@ -54,6 +54,31 @@ var PouchDB = require('pouchdb');
 PouchDB.plugin(require('relational-pouch'));
 PouchDB.plugin(require('pouchdb-find'));
 ```
+
+#### Typescript
+
+This package contains its own type definitions. Due to the nature of setSchema, which alters the database on which it is called, typescript needs to know about these changes. This is done by returning a new type. So working with this plugin should look something like this:
+
+```js
+import Pouch from 'pouchdb-core';
+//import some adapter
+import find from 'pouchdb-find';
+import rel from 'relational-pouch';
+
+Pouch
+  //.plugin(someadapter)
+  .plugin(find)
+  .plugin(rel);
+
+const baseDB = new Pouch(...);//adapter options
+const relDB = baseDB.setSchema(...);//schema options
+
+let relDoc = await relDB.rel.find('sometype', 'someid');
+
+//non relation pouch API is still available
+let doc = await relDB.get('someid');
+```
+
 
 API
 ----------
@@ -1134,6 +1159,6 @@ This will run the tests automatically and the process will exit with a 0 or a 1 
   ```js
   post.rev = await db.rel.putAttachment('post', post, 'file', fileData);
   ```
-- This library now uses Typescript, Webpack and Babel in its build setup. The resulting Typescript definitions are not yet final as modifying the PouchDB interface is tricky. The build creates files in 2 output directories: lib and dist.
+- This library now uses Typescript, Webpack and Babel in its build setup. The build creates files in 2 output directories: lib and dist.
 	- The lib directory will contain the output of `tsc` in esnext mode. So this can be used by Webpack and other module aware systems. These will require Babel transformations if you want to use them, but this way you can specify your own target.
 	- The dist directory contains 2 files, pouchdb.relational-pouch.browser.js and pouchdb.relational-pouch.node.js. These are compiled by webpack with targets ">2%, not ie 11" and "node 10". This should be sufficient for now, but otherwise you can build your own with Webpack.
