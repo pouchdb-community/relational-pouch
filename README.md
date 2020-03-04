@@ -1148,9 +1148,9 @@ This will run the tests automatically and the process will exit with a 0 or a 1 
 
 ## Changelog
 
-### 4.0.0-beta
+### 4.0.0
 
-- To prevent us from having to do cloning of input documents, we have changed the `save`, `putAttachment` and `removeAttachment` API. These functions no longer return the complete document. The attachment functions only return the new `rev` value, while the save will also return the `id`. So after these promises resolve you have to manually update your in app data to reflect this new revision (and possibly id) if you want to update the document later. You can use something like the following:
+- Breaking change: To prevent us from having to do cloning of input documents, we have changed the `save`, `putAttachment` and `removeAttachment` API. These functions no longer return the complete document. The attachment functions only return the new `rev` value, while the save will also return the `id`. So after these promises resolve you have to manually update your in app data to reflect this new revision (and possibly id) if you want to update the document later. You can use something like the following:
   ```js
   let updatedData = await db.rel.save('post', post);
   Object.assign(post, updatedData);
