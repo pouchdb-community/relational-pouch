@@ -1,6 +1,6 @@
 {
   "name": "relational-pouch",
-  "version": "4.0.0-beta.1",
+  "version": "4.0.0-beta.2",
   "description": "PouchDB, relational style",
   "main": "dist/pouchdb.relational-pouch.node.js",
   "jsnext:main": "lib/index.js",
@@ -28,7 +28,7 @@
     "test-browser": "node ./bin/test-browser.js",
     "lint": "eslint --ext .js,.ts src test/test.ts",
     "test": "npm run lint && bash ./bin/run-test.sh",
-    "build": "webpack --mode=production && tsc",
+    "build": "tsc && webpack --mode=production",
     "tsc": "tsc --build tsconfig.json",
     "dev": "node ./bin/dev-server.js",
     "coverage": "npm test --coverage && nyc check-coverage --lines 100 --function 100 --statements 100 --branches 100",

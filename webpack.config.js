@@ -67,7 +67,7 @@ let nodeTarget = {
 
 let webTarget = {
 	target: "web",
-	entry: "./src/index.ts",
+	entry: "./src/browser.ts",//TODO: this file could be exluded in tsc to not generate dist/browser.*
 	mode: argv.mode || 'development',
 //  stats: 'verbose',
 	output: {
