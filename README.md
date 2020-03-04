@@ -40,7 +40,7 @@ Then include it after `pouchdb.js` in your HTML page:
 ```html
 <script src="pouchdb.js"></script>
 <script src="pouchdb.find.js"></script>
-<script src="pouchdb.relational-pouch.js"></script>
+<script src="pouchdb.relational-pouch.browser.js"></script>
 ```
 
 ### In Node.js
@@ -54,6 +54,31 @@ var PouchDB = require('pouchdb');
 PouchDB.plugin(require('relational-pouch'));
 PouchDB.plugin(require('pouchdb-find'));
 ```
+
+#### Typescript
+
+This package contains its own type definitions. Due to the nature of setSchema, which alters the database on which it is called, typescript needs to know about these changes. This is done by returning a new type. So working with this plugin should look something like this:
+
+```js
+import Pouch from 'pouchdb-core';
+//import some adapter
+import find from 'pouchdb-find';
+import rel from 'relational-pouch';
+
+Pouch
+  //.plugin(someadapter)
+  .plugin(find)
+  .plugin(rel);
+
+const baseDB = new Pouch(...);//adapter options
+const relDB = baseDB.setSchema(...);//schema options
+
+let relDoc = await relDB.rel.find('sometype', 'someid');
+
+//non relation pouch API is still available
+let doc = await relDB.get('someid');
+```
+
 
 API
 ----------
@@ -167,14 +192,8 @@ Result:
 
 ```js
 {
-  "posts": [
-    {
-      "title": "Rails is Omakase",
-      "text": "There are a lot of a-la-carte software...",
-      "id": "14760983-285C-6D1F-9813-D82E08F1AC29",
-      "rev": "1-84df2c73028e5b8d0ae1cbb401959370"
-    }
-  ]
+  "id": "14760983-285C-6D1F-9813-D82E08F1AC29",
+  "rev": "1-84df2c73028e5b8d0ae1cbb401959370"
 }
 ```
 
@@ -192,14 +211,8 @@ Result:
 
 ```js
 {
-  "posts": [
-    {
-      "title": "Rails is Unagi",
-      "text": "Delicious unagi. Mmmmmm.",
-      "id": 1,
-      "rev": "1-0ae315ee597b22cc4b1acf9e0edc35ba"
-    }
-  ]
+  "id": 1,
+  "rev": "1-0ae315ee597b22cc4b1acf9e0edc35ba"
 }
 ```
 
@@ -359,25 +372,10 @@ var attachment = new Blob(['Is there life on Mars?']);
 db.rel.putAttachment('post', {id:1, rev:"1-..."}, 'file', attachment, 'text/plain');
 ```
 
-Result:
+This returns the new rev:
 
 ```js
-{
-  "posts": [
-    {
-      "attachments": {
-        "file": {
-          "content_type": "text/plain",
-          "digest": "md5-1cz9JKh0i+1OLJonmitgiQ==",
-          "length": 22,
-          // ... http://pouchdb.com/guides/attachments.html
-        }
-      },
-      "id": 1,
-      "rev": "2-...."
-    }
-  ]
-}
+"2-...."
 ```
 
 ### db.rel.getAttachment(type, id, attachmentId)
@@ -409,17 +407,10 @@ Or continuing from the `putAttachment` example:
 db.rel.removeAttachment('post', {id: 1, rev:"2-09d5c5bd86fc170c064b296773044ea9"} , 'file');
 ```
 
-Result:
+This returns the new rev:
 
 ```js
-{
-  "posts": [
-    {
-      "id": 1,
-      "rev": "3-...."
-    }
-  ]
-}
+"3-...."
 ```
 
 ### db.rel.parseDocID(docID)
@@ -1118,9 +1109,13 @@ Testing
 
 ### In Node
 
-This will run the tests in Node using LevelDB:
+This will run the tests in Node using memory and http adapter:
 
     npm test
+
+if you don't have a admin party setup you can specify admin credentials in the RELATIONAL_POUCH_DB_AUTH environment variable like this:
+
+	RELATIONAL_POUCH_DB_AUTH=user:password@
 
 You can also check for 100% code coverage using:
 
@@ -1150,3 +1145,20 @@ You can run e.g.
     CLIENT=selenium:phantomjs npm test
 
 This will run the tests automatically and the process will exit with a 0 or a 1 when it's done. Firefox uses IndexedDB, and PhantomJS uses WebSQL.
+
+## Changelog
+
+### 4.0.0
+
+- Breaking change: To prevent us from having to do cloning of input documents, we have changed the `save`, `putAttachment` and `removeAttachment` API. These functions no longer return the complete document. The attachment functions only return the new `rev` value, while the save will also return the `id`. So after these promises resolve you have to manually update your in app data to reflect this new revision (and possibly id) if you want to update the document later. You can use something like the following:
+  ```js
+  let updatedData = await db.rel.save('post', post);
+  Object.assign(post, updatedData);
+  ```
+  or
+  ```js
+  post.rev = await db.rel.putAttachment('post', post, 'file', fileData);
+  ```
+- This library now uses Typescript, Webpack and Babel in its build setup. The build creates files in 2 output directories: lib and dist.
+	- The lib directory will contain the output of `tsc` in esnext mode. So this can be used by Webpack and other module aware systems. These will require Babel transformations if you want to use them, but this way you can specify your own target.
+	- The dist directory contains 2 files, pouchdb.relational-pouch.browser.js and pouchdb.relational-pouch.node.js. These are compiled by webpack with targets ">2%, not ie 11" and "node 10". This should be sufficient for now, but otherwise you can build your own with Webpack.

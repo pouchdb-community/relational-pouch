@@ -5,6 +5,8 @@
 var COUCH_HOST = process.env.COUCH_HOST || 'http://127.0.0.1:5984';
 var HTTP_PORT = 8001;
 
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+
 var Promise = require('bluebird');
 var request = require('request');
 var http_server = require("http-server");
@@ -12,38 +14,86 @@ var fs = require('fs');
 var indexfile = "./test/test.js";
 var dotfile = "./test/.test-bundle.js";
 var outfile = "./test/test-bundle.js";
-var watchify = require("watchify");
-var browserify = require('browserify');
-var b = browserify(indexfile, {
-  cache: {},
-  packageCache: {},
-  plugin: [watchify]
-})
+var webpack = require('webpack');
+var path = require('path');
 
-b.on('update', bundle);
-bundle();
+var b = webpack({
+  target: "web",
+	entry: "./test/test.ts",
+	mode: 'development',
+	devtool: 'source-map',
+	output: {
+	  path: path.resolve(__dirname, '../test'),
+	  filename: 'test-bundle.js',
+    libraryTarget: 'umd',
+  },
+  plugins: [
+    new ForkTsCheckerWebpackPlugin({eslint: true, tsconfig: "test.tsconfig.json"}),
+    new webpack.EnvironmentPlugin(['RELATIONAL_POUCH_DB_AUTH']),
+  ],
+  module: {
+    rules: [
+//      {
+//        enforce: 'pre',
+//        test: /\.[tj]s$/,
+//        exclude: /node_modules/,
+//        loader: 'eslint-loader',
+//      },
+      {
+        test: /\.[tj]s$/,
+        exclude: /(node_modules|bower_components)/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: [
+                ['@babel/preset-env',
+                {
+                  "targets": "last 1 Chrome versions",
+                  "modules": false,
+                  useBuiltIns: "usage",
+                  corejs: 3,
+                }],
+              ],
+            },
+          },
+          {
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: true,
+              experimentalWatchApi: true,
+              context: path.resolve(__dirname, '../'),
+              configFile: "test.tsconfig.json",
+            },
+          },
+        ],
+      }
+    ]
+  },
+  resolve: {
+    extensions: ['tsx', '.ts', '.js', '.json'],
+  },
+}).watch({}, (error, stats) => {
+  if (error) {
+    console.error(error);
+    return;
+  }
+  
+  let logOptions = {all: false, colors: true, assets: true, errors: true, errorDetails: true, warnings: true, errorStack: true};
+  if (!stats.hasErrors()) {
+    console.log('Updated');
+    console.log(stats.toString(logOptions));
+    filesWritten = true;
+    checkReady();
+  } else {
+    const info = stats.toJson();
+    console.error(stats.toString(logOptions));//children: false, entrypoints: false, hash: false, modules: false, , chunks: false
+  }
+});
 
 var filesWritten = false;
 var serverStarted = false;
 var readyCallback;
-
-function bundle() {
-  var wb = b.bundle();
-  wb.on('error', function (err) {
-    console.error(String(err));
-  });
-  wb.on("end", end);
-  wb.pipe(fs.createWriteStream(dotfile));
-
-  function end() {
-    fs.rename(dotfile, outfile, function (err) {
-      if (err) { return console.error(err); }
-      console.log('Updated:', outfile);
-      filesWritten = true;
-      checkReady();
-    });
-  }
-}
 
 function startServers(callback) {
   readyCallback = callback;

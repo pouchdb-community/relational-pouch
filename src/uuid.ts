@@ -1,5 +1,3 @@
-"use strict";
-
 // BEGIN Math.uuid.js
 
 /*!
@@ -36,14 +34,14 @@ Dual licensed under the MIT and GPL licenses.
  *   >>> Math.uuid(8, 16) // 8 character ID (base=16)
  *   "098F4D35"
  */
-var chars = (
+let chars = (
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
   'abcdefghijklmnopqrstuvwxyz'
 ).split('');
 function getValue(radix) {
   return 0 | Math.random() * radix;
 }
-function uuid(len, radix) {
+function uuid(len?:number, radix?:number) {
   radix = radix || chars.length;
   var out = '';
   var i = -1;
@@ -78,7 +76,6 @@ function uuid(len, radix) {
   return out;
 }
 
+export default uuid;
 
-
-module.exports = uuid;
 

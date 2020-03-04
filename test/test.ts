@@ -1,26 +1,32 @@
-/*jshint expr:true */
-'use strict';
+import {createBlob} from 'blob-util';
 
-var Pouch = require('pouchdb-memory');
+import Pouch from 'pouchdb-core';
+import memory from 'pouchdb-adapter-memory';
+import http from 'pouchdb-adapter-http';
+import mapreduce from 'pouchdb-mapreduce';
+import find from 'pouchdb-find';
 
-//
-// your plugin goes here
-//
-var plugin = require('../lib');
-Pouch.plugin(plugin)
-  .plugin(require('pouchdb-find'));
+import rel from '../src/';
 
-var chai = require('chai');
-chai.use(require("chai-as-promised"));
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+
+Pouch
+  .plugin(memory)
+  .plugin(http)
+  .plugin(mapreduce)
+  .plugin(find)
+  .plugin(rel);
+
+chai.use(chaiAsPromised);
 
 //
 // more variables you might want
 //
-var should = chai.should(); // var should = chai.should();
-var Promise = require('bluebird'); // var Promise = require('bluebird');
+var should = chai.should();
 
 var dbs = 'testdb' + Math.random() +
-    ',http://localhost:5984/testdb' + Math.round(Math.random() * 100000);
+    ',http://' + (process.env.RELATIONAL_POUCH_DB_AUTH || '') + 'localhost:5984/testdb' + Math.round(Math.random() * 100000);
 
 dbs.split(',').forEach(function (db) {
   var dbType = /^http/.test(db) ? 'http' : 'local';
@@ -28,22 +34,22 @@ dbs.split(',').forEach(function (db) {
 });
 
 function tests(dbName, dbType) {
-  var db;
+  var rootdb:PouchDB.Database<any>;
 
   beforeEach(function () {
-    db = new Pouch(dbName);
-    return db;
+    rootdb = new Pouch(dbName);
+    return rootdb;
   });
   afterEach(function () {
-    return db.getIndexes().then(function(data) {
+    return rootdb.getIndexes().then(function(data) {
       var deleteIndexPromises = data.indexes.map(function(index) {
-          return index.ddoc ? (db.deleteIndex(index)) : (Promise.resolve());
-      	});
+          return index.ddoc ? (rootdb.deleteIndex(index)) : null;
+        });
       return Promise.all(deleteIndexPromises);
     }).catch(function() {
-    	//may fail on http
+      //may fail on http
     }).then(function() {
-    	return db.destroy();
+      return rootdb.destroy();
     });
   });
 
@@ -51,7 +57,7 @@ function tests(dbName, dbType) {
     this.timeout(30000);
 
     it('should barf on bad types', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -64,7 +70,7 @@ function tests(dbName, dbType) {
     });
 
     it('makeDocID and parseDocID produce symmetrical return vals', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -77,20 +83,19 @@ function tests(dbName, dbType) {
     });
 
     it('allows makeDocID for an unknown type', function () {
-      db.setSchema([]);
+      let db = rootdb.setSchema([]);
 
       db.rel.makeDocID({ type: 'something', id: 'quux' }).should.equal('something_2_quux');
     });
 
     it('allows parseDocID for an unknown type', function () {
-      db.setSchema([]);
+      let db = rootdb.setSchema([]);
 
       db.rel.parseDocID('something_2_bar').should.deep.equal({ type: 'something', id: 'bar' });
     });
 
     it('should store blog posts', function () {
-
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -103,22 +108,13 @@ function tests(dbName, dbType) {
         text: text
       }).then(function (res) {
         should.exist(res);
-        res.posts.should.have.length(1);
-        res.posts[0].id.should.be.a('string');
-        res.posts[0].rev.should.be.a('string');
-        var id = res.posts[0].id;
-        var rev = res.posts[0].rev;
-        res.posts[0].should.deep.equal({
-          id: id,
-          rev: rev,
-          title: title,
-          text: text
-        });
+        res.id.should.be.a('string');
+        res.rev.should.be.a('string');
       });
     });
     it('should store blog posts with an id', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -133,23 +129,15 @@ function tests(dbName, dbType) {
         id: id
       }).then(function (res) {
         should.exist(res);
-        res.posts.should.have.length(1);
-        res.posts[0].id.should.be.a('string');
-        res.posts[0].rev.should.be.a('string');
-        var id = res.posts[0].id;
-        var rev = res.posts[0].rev;
-        res.posts[0].should.deep.equal({
-          id: id,
-          rev: rev,
-          title: title,
-          text: text
-        });
+        res.id.should.be.a('string');
+        res.rev.should.be.a('string');
+        res.id.should.equal(id);
       });
     });
 
     it('should store blog posts with an int id', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -164,23 +152,15 @@ function tests(dbName, dbType) {
         id: id
       }).then(function (res) {
         should.exist(res);
-        res.posts.should.have.length(1);
-        res.posts[0].id.should.be.a('number');
-        res.posts[0].rev.should.be.a('string');
-        var id = res.posts[0].id;
-        var rev = res.posts[0].rev;
-        res.posts[0].should.deep.equal({
-          id: id,
-          rev: rev,
-          title: title,
-          text: text
-        });
+        res.id.should.be.a('number');
+        res.rev.should.be.a('string');
+        res.id.should.equal(id);
       });
     });
 
     it('should update blog posts', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -188,30 +168,48 @@ function tests(dbName, dbType) {
       var title = 'Rails is Omakase';
       var text = 'There are a lot of ala carte blah blah blah';
       var id = 1;
-
-      return db.rel.save('post', {
+      var post:any = {
         title: title,
         text: text,
         id: id
-      }).then(function (res) {
+      };
+
+      return db.rel.save('post', post).then(function (res) {
         should.exist(res);
-        var post = res.posts[0];
+        res.rev.should.be.a('string');
+        res.id.should.be.a('number');
+        res.id.should.equal(id);
+        Object.assign(post, res);
         post.title = 'Rails is Unagi';
         return db.rel.save('post', post);
       }).then(function (res) {
-        var rev = res.posts[0].rev;
-        res.posts.should.deep.equal([{
-          id: id,
-          rev: rev,
-          title: 'Rails is Unagi',
-          text: text
-        }]);
+        res.rev.should.be.a('string');
+        res.id.should.be.a('number');
+        res.id.should.equal(id);
+        res.rev.should.not.equal(post.rev);
       });
     });
+    
+    it('fails on a rev conflict', function () {
 
+      let db = rootdb.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+      
+      var post:any = {
+        title: "Some title",
+        id: "postid"
+      };
+      
+      return db.rel.save('post', post).then(function (res) {
+        return db.rel.save('post', post);
+      }).should.be.rejected;
+    });
+    
     it('should find blog posts', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -253,7 +251,7 @@ function tests(dbName, dbType) {
 
     it('should orders correctly', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -306,7 +304,7 @@ function tests(dbName, dbType) {
 
     it('should find empty blog posts', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -320,7 +318,7 @@ function tests(dbName, dbType) {
 
     it('should find stuff that doesnt exist', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -339,7 +337,7 @@ function tests(dbName, dbType) {
 
     it('should separate independent types', function () {
 
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -366,7 +364,7 @@ function tests(dbName, dbType) {
 
     it('should find a single thing', function () {
 
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -401,7 +399,7 @@ function tests(dbName, dbType) {
 
     it('should find multiple things', function () {
 
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -442,7 +440,7 @@ function tests(dbName, dbType) {
     });
 
     it('should find using a documentType if provided', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'postSummary',
           plural: 'postSummaries',
@@ -462,7 +460,7 @@ function tests(dbName, dbType) {
     });
 
     it('should save using a documentType if provided', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'postSummary',
           plural: 'postSummary',
@@ -484,7 +482,7 @@ function tests(dbName, dbType) {
     });
 
     it('should use the documentType for makeDocID', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -500,7 +498,7 @@ function tests(dbName, dbType) {
     });
 
     it('should use the default documentType for parseDocID, if present', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -516,7 +514,7 @@ function tests(dbName, dbType) {
     });
 
     it('should use a type with a matching documentType for parseDocID, if no default', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'postSummary',
           plural: 'postSummaries',
@@ -526,10 +524,32 @@ function tests(dbName, dbType) {
 
       db.rel.parseDocID('post_2_bar').should.deep.equal({ type: 'postSummary', id: 'bar' });
     });
+    
+    it('should save a snapshot, so changes after rel.save should be ignored', function () {
+      let db = rootdb.setSchema([{
+        singular: 'post',
+        plural: 'posts'
+      }]);
+      
+      let titleBeforeSaving = "Title before saving";
+      let post = {
+        title: titleBeforeSaving,
+        id: 'snapshot'
+      };
+      
+      let savePromise = db.rel.save('post', post);
+      post.title = "Title after saving";
+
+      return savePromise.then(function () {
+        return db.rel.find('post', post.id);
+      }).then(function (res) {
+        res.posts[0].title.should.equal(titleBeforeSaving);
+      });
+    });
 
     it('can delete', function () {
 
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'post',
           plural: 'posts'
@@ -574,7 +594,7 @@ function tests(dbName, dbType) {
 
     it('Adds attachment information', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -587,10 +607,10 @@ function tests(dbName, dbType) {
         return db.get("post_2_with_attachment");
       }).then(function (res) {
         var attachment;
-        if (process.browser) {
-          attachment = blobUtil.createBlob(['Is there life on Mars?']);
+        if (typeof window !== 'undefined') {
+          attachment = createBlob(['Is there life on Mars?']);
         } else {
-          attachment = new Buffer('Is there life on Mars?');
+          attachment = Buffer.from('Is there life on Mars?');
         }
         return db.putAttachment(res._id, "file", res._rev, attachment, 'text/plain');
       }).then(function () {
@@ -602,16 +622,16 @@ function tests(dbName, dbType) {
     });
 
     it('When saving the new document, saves the attachment', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
 
       var attachment;
-      if (process.browser) {
-        attachment = blobUtil.createBlob(['Is there life on Mars?']);
+      if (typeof window !== 'undefined') {
+        attachment = createBlob(['Is there life on Mars?']);
       } else {
-        attachment = new Buffer('Is there life on Mars?');
+        attachment = Buffer.from('Is there life on Mars?');
       }
 
       return db.rel.save('post', {
@@ -635,16 +655,16 @@ function tests(dbName, dbType) {
     });
 
     it('When updating the existing document, keeps the attachment', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
 
       var attachment;
-      if (process.browser) {
-        attachment = blobUtil.createBlob(['Is there life on Mars?']);
+      if (typeof window !== 'undefined') {
+        attachment = createBlob(['Is there life on Mars?']);
       } else {
-        attachment = new Buffer('Is there life on Mars?');
+        attachment = Buffer.from('Is there life on Mars?');
       }
 
       return db.rel.save('post', {
@@ -676,16 +696,16 @@ function tests(dbName, dbType) {
     });
 
     it('Removes the attachment through removal of attachments field', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
 
       var attachment;
-      if (process.browser) {
-        attachment = blobUtil.createBlob(['Is there life on Mars?']);
+      if (typeof window !== 'undefined') {
+        attachment = createBlob(['Is there life on Mars?']);
       } else {
-        attachment = new Buffer('Is there life on Mars?');
+        attachment = Buffer.from('Is there life on Mars?');
       }
 
       return db.rel.save('post', {
@@ -714,7 +734,7 @@ function tests(dbName, dbType) {
     });
 
     it('Adds attachments through rel.putAttachment', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -723,13 +743,15 @@ function tests(dbName, dbType) {
         title: "Files are cool",
         text: "In order to have nice blog posts we need to be able to add files",
         id: 'with_attachment'
+      }).then(function() {
+        return db.rel.find('post', 'with_attachment');
       }).then(function (res) {
         var attachment;
         var post = res.posts[0];
-        if (process.browser) {
-          attachment = blobUtil.createBlob(['Is there life on Mars?']);
+        if (typeof window !== 'undefined') {
+          attachment = createBlob(['Is there life on Mars?']);
         } else {
-          attachment = new Buffer('Is there life on Mars?');
+          attachment = Buffer.from('Is there life on Mars?');
         }
         return db.rel.putAttachment('post', post, "file", attachment, 'text/plain');
       }).then(function () {
@@ -742,7 +764,7 @@ function tests(dbName, dbType) {
     });
 
     it('Get attachments through rel.getAttachment', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -751,24 +773,26 @@ function tests(dbName, dbType) {
         title: "Files are cool",
         text: "In order to have nice blog posts we need to be able to add files",
         id: 'with_attachment'
+      }).then(function() {
+        return db.rel.find('post', 'with_attachment');
       }).then(function (res) {
         var attachment;
         var post = res.posts[0];
-        if (process.browser) {
-          attachment = blobUtil.createBlob(['Is there life on Mars?']);
+        if (typeof window !== 'undefined') {
+          attachment = createBlob(['Is there life on Mars?']);
         } else {
-          attachment = new Buffer('Is there life on Mars?');
+          attachment = Buffer.from('Is there life on Mars?');
         }
         return db.rel.putAttachment('post', post, "file", attachment, 'text/plain');
       }).then(function () {
         return db.rel.getAttachment('post', 'with_attachment', 'file');
       }).then(function (attachment) {
-        if (process.browser) {
+        if (typeof window !== 'undefined') {
           var reader = new FileReader();
           reader.onloadend = function () {
 
             var binary = "";
-            var bytes = new Uint8Array(this.result || '');
+            var bytes = new Uint8Array(this.result as ArrayBuffer);
             var length = bytes.byteLength;
 
             for (var i = 0; i < length; i++) {
@@ -777,7 +801,7 @@ function tests(dbName, dbType) {
 
             binary.should.equal('Is there life on Mars?');
           };
-          reader.readAsArrayBuffer(attachment);
+          reader.readAsArrayBuffer(attachment as Blob);
         } else {
           attachment.toString('ascii').should.equal('Is there life on Mars?');
         }
@@ -785,7 +809,7 @@ function tests(dbName, dbType) {
     });
 
     it('Removes attachments through rel.removeAttachment', function () {
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -794,13 +818,15 @@ function tests(dbName, dbType) {
         title: "Files are cool",
         text: "In order to have nice blog posts we need to be able to add files",
         id: 'with_attachment'
+      }).then(function() {
+        return db.rel.find('post', 'with_attachment');
       }).then(function (res) {
         var attachment;
         var post = res.posts[0];
-        if (process.browser) {
-          attachment = blobUtil.createBlob(['Is there life on Mars?']);
+        if (typeof window !== 'undefined') {
+          attachment = createBlob(['Is there life on Mars?']);
         } else {
-          attachment = new Buffer('Is there life on Mars?');
+          attachment = Buffer.from('Is there life on Mars?');
         }
         return db.rel.putAttachment('post', post, "file", attachment, 'text/plain');
       }).then(function () {
@@ -823,7 +849,7 @@ function tests(dbName, dbType) {
 
     it('fails if you include no relations', function () {
       return Promise.resolve().then(function () {
-        db.setSchema([{
+        let db = rootdb.setSchema([{
           singular: 'foo',
           plural: 'foos',
           relations: {}
@@ -837,7 +863,7 @@ function tests(dbName, dbType) {
 
     it('fails if you include empty relationship definition', function () {
       return Promise.resolve().then(function () {
-        db.setSchema([{
+        let db = rootdb.setSchema([{
           singular: 'foo',
           plural: 'foos',
           relations: {
@@ -853,7 +879,7 @@ function tests(dbName, dbType) {
 
     it('fails for unknown entity types', function () {
       return Promise.resolve().then(function () {
-        db.setSchema([{
+        let db = rootdb.setSchema([{
           singular: 'foo',
           plural: 'foos',
           relations: {
@@ -869,7 +895,7 @@ function tests(dbName, dbType) {
 
     it('fails for unknown relation types', function () {
       return Promise.resolve().then(function () {
-        db.setSchema([
+        let db = rootdb.setSchema([
           {
             singular: 'foo',
             plural: 'foos',
@@ -894,7 +920,7 @@ function tests(dbName, dbType) {
     this.timeout(30000);
 
     it('does one-to-one', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -949,7 +975,7 @@ function tests(dbName, dbType) {
     });
 
     it('does one-to-many with empty dependents', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -989,7 +1015,7 @@ function tests(dbName, dbType) {
     });
 
     it('does one-to-many with several entities', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1082,7 +1108,7 @@ function tests(dbName, dbType) {
       });
     });
     it('does many-to-many with recursive relationship', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1306,7 +1332,7 @@ function tests(dbName, dbType) {
 
     if (dbType === 'local') { //pouchdb-find only supported on cloudant and couch >= 2.0
     it('does parseRelDocs', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1324,7 +1350,7 @@ function tests(dbName, dbType) {
       ]);
 
       return db.createIndex({index: { fields: ['data.name'] }}).then(function() {
-      	return db.rel.save('author', {
+        return db.rel.save('author', {
           name: 'Stephen King',
           id: 19,
           books: [1]
@@ -1336,10 +1362,10 @@ function tests(dbName, dbType) {
           author: 19
         });
       }).then(function () {
-      	//not a rel.find
-        return db.find({selector: {'data.name': 'Stephen King'}}).then(function(findRes) {
-        	return db.rel.parseRelDocs('author', findRes.docs);
-        });
+        //not a rel.find
+        return db.find({selector: {'data.name': 'Stephen King'}});
+      }).then(function(findRes) {
+        return db.rel.parseRelDocs('author', findRes.docs);
       }).then(function (res) {
         ['authors', 'books'].forEach(function (type) {
           res[type].forEach(function (obj) {
@@ -1367,7 +1393,7 @@ function tests(dbName, dbType) {
     });
 
     it('does one-to-many without saving hasMany side', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1385,7 +1411,7 @@ function tests(dbName, dbType) {
       ]);
 
       return db.createIndex({index: { fields: ['data.author', '_id'] }}).then(function() {
-      	return db.rel.save('author', {
+        return db.rel.save('author', {
           name: 'Stephen King',
           id: 19,
         });
@@ -1423,12 +1449,12 @@ function tests(dbName, dbType) {
     });
 
     it('does findHasMany', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
           relations: {
-          	//omit relation should also work
+            //omit relation should also work
             'books': {hasMany: { type: 'book', options: {async: true, queryInverse: 'author'}}}
           }
         },
@@ -1442,7 +1468,7 @@ function tests(dbName, dbType) {
       ]);
 
       return db.createIndex({index: { fields: ['data.author', '_id'] }}).then(function() {
-      	return db.rel.save('author', {
+        return db.rel.save('author', {
           name: 'Stephen King',
           id: 19,
         });
@@ -1472,7 +1498,7 @@ function tests(dbName, dbType) {
 
         return db.rel.findHasMany('book', 'author', 19);
       }).then(function(res) {
-      	['books'].forEach(function (type) {
+        ['books'].forEach(function (type) {
           res[type].forEach(function (obj) {
             obj.rev.should.be.a('string');
             delete obj.rev;
@@ -1492,7 +1518,7 @@ function tests(dbName, dbType) {
     }
 
     it('does many-to-many with several entities', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1594,7 +1620,7 @@ function tests(dbName, dbType) {
     });
 
     it('should fetch all authors even with empty relations', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1665,7 +1691,7 @@ function tests(dbName, dbType) {
     });
 
     it('does one-to-many', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1764,7 +1790,7 @@ function tests(dbName, dbType) {
     });
 
     it('does one-to-many with embedded relations', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1866,7 +1892,7 @@ function tests(dbName, dbType) {
       });
     });
     it('does one-to-many and keeps the right order', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -1965,7 +1991,7 @@ function tests(dbName, dbType) {
     });
 
     it('does sideload if async option is false', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -2040,7 +2066,7 @@ function tests(dbName, dbType) {
       });
     });
     it('does not sideload if async option is true', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -2100,7 +2126,7 @@ function tests(dbName, dbType) {
     });
 
     it('fromRawDoc works with changes', function () {
-      db.setSchema([
+      let db = rootdb.setSchema([
         {
           singular: 'author',
           plural: 'authors',
@@ -2155,7 +2181,7 @@ function tests(dbName, dbType) {
 
     it('should pass along options', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -2192,7 +2218,7 @@ function tests(dbName, dbType) {
 
     it('should pass along options, including startkey', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -2233,7 +2259,7 @@ function tests(dbName, dbType) {
 
     it('should pass along options, including endkey', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -2273,7 +2299,7 @@ function tests(dbName, dbType) {
 
   it('should pass along options, including kip', function () {
 
-      db.setSchema([{
+      let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
@@ -2313,7 +2339,7 @@ function tests(dbName, dbType) {
     });
 
   it('isDeleted should work', function() {
-    db.setSchema([{
+    let db = rootdb.setSchema([{
         singular: 'post',
         plural: 'posts'
       }]);
