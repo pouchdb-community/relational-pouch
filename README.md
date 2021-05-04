@@ -137,7 +137,7 @@ db.setSchema([
     plural: 'comments',
     relations: {
       post: {belongsTo: 'post'}
-    }
+    }x
   }
 ]);
 ```
@@ -147,6 +147,8 @@ This is a synchronous method that does not return a Promise.
 You can define one-to-one, one-to-many, and many-to-many relationships using any combination of `belongsTo` and `hasMany` that you want. For more examples, read the [Ember guide to models](http://emberjs.com/guides/models/defining-models/), which is what inspired this.
 
 You need to explicitly define the singular and plural forms of your entities, because I'm not a big fan of applying magic Anglocentric defaults to everything.
+
+#### `db.rel.<method>`
 
 Once you call `setSchema`, your `db` will be blessed with a `rel` object, which is where you can start using the rest of this plugin's API.
 
@@ -197,7 +199,7 @@ Result:
 }
 ```
 
-If you want, you can specify an `id`. Otherwise an `id` will be created for you.
+You can optionally specify an `id`, otherwise an `id` will be created for you. (See below re: `id` and `rev`.)
 
 ```js
 db.rel.save('post', {
@@ -218,7 +220,15 @@ Result:
 
 You'll notice the special field `rev`, which is a revision identifier. That'll come into play later.
 
-`id` and `rev` are reserved fields when you use this plugin. You shouldn't try to use them for something else. An `id` can be any string or integer.
+#### `id` and `rev` are reserved fields!
+
+This plugin uses `id` and `rev`. You shouldn't use those field names for anything else.
+
+An `id` can be any string or integer. 
+
+#### `id` vs `_id`
+
+The `_id` is your document ID, as with PouchDB/CouchDB. The `id` is a property, and `relational-pouch` uses `id` for its bookkeeping. While you _can_ put the same values for `_id` and `id`, you should _not_ conflate the two. `_id` belongs to couch, `id` belongs to `relational-pouch`.
 
 ### db.rel.find(type)
 
