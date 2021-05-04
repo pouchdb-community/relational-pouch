@@ -199,7 +199,7 @@ Result:
 }
 ```
 
-You can optionally specify an `id`, otherwise an `id` will be created for you. (See below re: `id` and `rev`.)
+You can optionally specify an `id`, otherwise an `id` will be created for you. (See below re: `id` vs. `_id`)
 
 ```js
 db.rel.save('post', {
