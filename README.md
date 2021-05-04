@@ -137,7 +137,7 @@ db.setSchema([
     plural: 'comments',
     relations: {
       post: {belongsTo: 'post'}
-    }x
+    }
   }
 ]);
 ```
