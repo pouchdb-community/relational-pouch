@@ -249,7 +249,7 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
       return false;
     }
     catch (err) {
-      return err.reason === "deleted" ? true : null;
+      return err.status === 404 ? true : null;
     }
   }
 
