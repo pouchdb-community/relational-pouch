@@ -244,12 +244,12 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
   async function isDeleted(type, id) {
     let typeInfo = getTypeInfo(type);
 
-    try {
-      let doc = await db.get(serialize(typeInfo.documentType, id));
-      return false;
-    }
-    catch (err) {
-      return err.reason === "deleted" ? true : null;
+    let docs = await db.allDocs({keys: [serialize(typeInfo.documentType, id)]});
+    let doc = docs.rows[0];
+    if ("error" in doc) {
+      return null;
+    } else {
+      return !!doc.value.deleted;
     }
   }
 
