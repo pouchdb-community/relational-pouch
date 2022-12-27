@@ -1,7 +1,8 @@
 import {createBlob} from 'blob-util';
 
 import Pouch from 'pouchdb-core';
-import memory from 'pouchdb-adapter-memory';
+import indexeddb from 'pouchdb-adapter-indexeddb';
+//import memory from 'pouchdb-adapter-memory';
 import http from 'pouchdb-adapter-http';
 import mapreduce from 'pouchdb-mapreduce';
 import find from 'pouchdb-find';
@@ -12,7 +13,8 @@ import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
 Pouch
-  .plugin(memory)
+  .plugin(indexeddb)
+  //.plugin(memory)
   .plugin(http)
   .plugin(mapreduce)
   .plugin(find)

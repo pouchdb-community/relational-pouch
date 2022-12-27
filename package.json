@@ -73,6 +73,7 @@
     "mocha": "~4.1.0",
     "nyc": "^15.0.0",
     "pouchdb-adapter-http": "^7.1.1",
+    "pouchdb-adapter-indexeddb": "^7.3.1",
     "pouchdb-adapter-memory": "^7.1.0",
     "pouchdb-core": "^7.1.1",
     "pouchdb-find": "^7.1.0",
