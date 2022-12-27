@@ -1,6 +1,6 @@
 {
   "name": "relational-pouch",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "description": "PouchDB, relational style",
   "main": "dist/pouchdb.relational-pouch.node.js",
   "jsnext:main": "lib/index.js",
@@ -38,7 +38,7 @@
     "uniq": "^1.0.1"
   },
   "peerDependencies": {
-    "pouchdb-find": "^7.1.0"
+    "pouchdb-find": ">=7.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
