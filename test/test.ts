@@ -12,7 +12,7 @@ import rel from '../src/';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
-const localDb = process.env.CLIENT == 'node' ? memory : indexeddb;
+const localDb = (!process.env.CLIENT || process.env.CLIENT == 'node') ? memory : indexeddb;
 
 Pouch
   .plugin(localDb)

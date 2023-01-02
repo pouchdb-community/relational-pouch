@@ -5,7 +5,6 @@ name: Node.js CI
 
 env:
   TRAVIS: 1
-  CLIENT: 'selenium:firefox'
 
 on:
   push:
@@ -22,6 +21,7 @@ jobs:
     strategy:
       matrix:
         node-version: [14.x, 16.x]
+        client: ['selenium:firefox', 'selenium:chrome', node]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -33,7 +33,6 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - run: npm run build --if-present
-    - name: xvfb tests
-      uses: GabrielBB/xvfb-action@v1
-      with:
-        run: npm test
+    - run: xvfb-run --auto-servernum npm test
+      env:
+        CLIENT: ${{ matrix.client }}
