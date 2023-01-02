@@ -2,7 +2,7 @@ import {createBlob} from 'blob-util';
 
 import Pouch from 'pouchdb-core';
 import indexeddb from 'pouchdb-adapter-indexeddb';
-//import memory from 'pouchdb-adapter-memory';
+import memory from 'pouchdb-adapter-memory';
 import http from 'pouchdb-adapter-http';
 import mapreduce from 'pouchdb-mapreduce';
 import find from 'pouchdb-find';
@@ -12,9 +12,10 @@ import rel from '../src/';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
+const localDb = (!process.env.CLIENT || process.env.CLIENT == 'node') ? memory : indexeddb;
+
 Pouch
-  .plugin(indexeddb)
-  //.plugin(memory)
+  .plugin(localDb)
   .plugin(http)
   .plugin(mapreduce)
   .plugin(find)
