@@ -5,6 +5,7 @@ name: Node.js CI
 
 env:
   TRAVIS: 1
+  CLIENT: 'selenium:firefox'
 
 on:
   push:
@@ -35,4 +36,4 @@ jobs:
     - name: xvfb tests
       uses: GabrielBB/xvfb-action@v1
       with:
-        run: CLIENT=selenium:firefox npm test
+        run: npm test
