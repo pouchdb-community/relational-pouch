@@ -32,7 +32,7 @@
     "tsc": "tsc --build tsconfig.json",
     "dev": "node ./bin/dev-server.js",
     "coverage": "npm test --coverage && nyc check-coverage --lines 100 --function 100 --statements 100 --branches 100",
-    "prepare": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "uniq": "^1.0.1"
