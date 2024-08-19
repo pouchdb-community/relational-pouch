@@ -409,7 +409,7 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
     selector['data.' + belongsToKey] = belongsToId;
 
     //only use opts for return ids or whole doc? returning normal documents is not really good
-    let findRes = await db.find({ selector: selector });
+    let findRes = await db.find({ selector: selector, limit: Number.MAX_SAFE_INTEGER });
     return _parseRelDocs(type, foundObjects, findRes.docs);
   }
 
