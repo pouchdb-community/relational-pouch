@@ -50,7 +50,7 @@ function deserialize(str) {
 }
 
 function setSchema<T extends {} = {}>(this: PouchDB.Database<T>, schema) {
-  let db = this as PouchDB.RelDatabase<T>;// & {rel:any} 
+  let db = this as PouchDB.RelDatabase<T>;// & {rel:any}
 
   let keysToSchemas = new Map();
   schema.forEach(function (type) {
@@ -88,9 +88,9 @@ function setSchema<T extends {} = {}>(this: PouchDB.Database<T>, schema) {
       });
     }
   });
-  
+
   db.rel = createRel(db as PouchDB.Database<T>, keysToSchemas, schema);
-  
+
   return db;
 }
 
@@ -193,7 +193,7 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
       _deleted: true
     };
     await db.put(pouchDoc);
-    
+
     return {deleted: true};
   }
 
@@ -236,7 +236,7 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
     }
 
     let allDocs = await db.allDocs(opts);
-    
+
     return _parseAlldocs(type, foundObjects, allDocs);
   }
 
@@ -271,16 +271,16 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
     if (!foundObjects.has(type)) {
       foundObjects.set(type, new Map());
     }
-    
+
     let listsOfFetchTasks = [];
-    
+
     for (let doc of pouchDocs) {
       let obj = fromRawDoc(doc);
 
       foundObjects.get(type).set(JSON.stringify(obj.id), obj);
 
       // fetch all relations
-      
+
       for (let field of Object.keys(typeInfo.relations || {})) {
         let relationDef = typeInfo.relations[field];
         let relationType = Object.keys(relationDef)[0];
@@ -316,7 +316,7 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
           let relatedIds = (obj[field] || []).filter(function (relatedId) {
             return typeof relatedId !== 'undefined';
           });
-          
+
           if (relatedIds.length) {
             listsOfFetchTasks.push({
               relatedType: relatedType,
@@ -325,10 +325,10 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
           }
         }
       }
-      
+
       //listsOfFetchTasks = listsOfFetchTasks.concat(docRelations);
     }
-    
+
     // fetch in as few http requests as possible
     let typesToIds = {};
     listsOfFetchTasks.forEach(function (fetchTask) {
@@ -336,10 +336,10 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
       if (!fetchTask) {
         return;
       }
-      
+
       let relatedType = fetchTask.relatedType;
       let relatedIds = fetchTask.relatedIds;
-      
+
       for (let i = relatedIds.length - 1; i >= 0; i--) {
         let relatedId = relatedIds[i];
         if (foundObjects.has(relatedType) &&
@@ -409,7 +409,7 @@ function createRel(db:PouchDB.Database, keysToSchemas:any, schema:any) {
     selector['data.' + belongsToKey] = belongsToId;
 
     //only use opts for return ids or whole doc? returning normal documents is not really good
-    let findRes = await db.find({ selector: selector, limit: Number.MAX_SAFE_INTEGER });
+    let findRes = await db.find({ selector: selector, limit: 2**32-1 });
     return _parseRelDocs(type, foundObjects, findRes.docs);
   }
 
@@ -475,15 +475,15 @@ declare global {
     interface Static {
       //TODO: return PluggedInStatic<T>, which overwrites new and default to return extended Database interface
       // so we don't just extend the namespace, but instead really change the result of .plugin
-      
+
       plugin<T extends {}>(plugin: T): Static;
       //plugin(plugin: function(Static)): Static;
     }
-    
+
     interface Database<Content extends {} = {}> {
       setSchema<T extends {} = Content>(schema: any): RelDatabase<T>;
     }
-    
+
     interface RelDatabase <Content extends {} = {}> extends Database<Content> {
       rel: RelDB;
     }
